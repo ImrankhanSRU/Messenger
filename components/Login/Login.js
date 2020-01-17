@@ -63,7 +63,7 @@ class Login extends Component {
 
     goToHome = (hCode) => {
         // Actions.home(hCode)
-        this.props.navigation.navigate('Header', {hcode: "imrankhan"})
+        this.props.navigation.navigate('Home')
     }
 
     checkConnection = () => {
@@ -99,7 +99,7 @@ class Login extends Component {
 
 
     render() {
-        const { navigate } = this.props.navigation;
+        // const { navigate } = this.props.navigation;
 
         disable = true
         if (this.state.email.length && this.state.password.length)
