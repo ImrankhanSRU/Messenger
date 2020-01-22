@@ -3,8 +3,11 @@ import { createStackNavigator } from 'react-navigation-stack';
 import Home from './components/Home/Home'
 import Main from './components/Main/Main'
 import Login from './components/Login/Login'
+import List from './components/List/List'
+import ViewMessage from './components/ViewMessage/ViewMessage'
 
 const MainNavigator = createStackNavigator({
+
   Main: {
     screen: Main,
     navigationOptions: {
@@ -22,7 +25,19 @@ const MainNavigator = createStackNavigator({
     navigationOptions: {
       headerShown: false,
     }
-  }
+  },
+  List: {
+    screen: List,
+    navigationOptions: {
+      headerShown: false,
+    }
+  },
+  ViewMessage: {
+    screen: ViewMessage,
+    navigationOptions: {
+      headerShown: false
+    }
+  },
 });
 
 const App = createAppContainer(MainNavigator);

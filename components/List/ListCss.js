@@ -28,5 +28,29 @@ export default StyleSheet.create({
     name: {
         // marginLeft: 20,
         fontSize: 15
+    },
+    indicator: {
+        display: "flex",
+        alignItems: "flex-end"
+    },
+    count: {
+        marginTop: 5,
+        textAlign: "center",
+        backgroundColor: "#06D755",
+        color: "white",
+        paddingLeft: 7,
+        paddingRight: 7,
+        paddingTop: 1,
+        paddingBottom: 1,
+        borderRadius: 50,
+        // minWidth: 25,
+        // minHeight: 25,
+    },
+    lastMsgDate: {
+        fontSize: 12,
+        color: "gray"
+    },
+    unseen: {
+        color: "#06D755"
     }
 })

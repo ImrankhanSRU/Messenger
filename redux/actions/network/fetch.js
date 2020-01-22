@@ -2,12 +2,15 @@ import {
     fetchContactsPending, fetchContactsSuccess, fetchContactsError,
     fetchGroupsSuccess, fetchGroupsError, 
     fetchPlantsSuccess, fetchPlantsError
-} from './actions';
+} from '../contactsActions';
+
+
+import obj from '../../../components/config'
 
 export function fetchContacts() {
     return dispatch => {
         dispatch(fetchContactsPending());
-        fetch('http://52.66.213.147:3000/api/userManagement/getUserDetails')
+        fetch(`${obj.BASE_URL}api/userManagement/getUserDetails`)
             .then(res => res.json())
             .then(res => {
                 if (res.error) {
@@ -24,10 +27,9 @@ export function fetchContacts() {
 }
 
 export function fetchGroups() {
-
     return dispatch => {
         dispatch(fetchContactsPending());
-        fetch('http://52.66.213.147:3000/api/controlCenter/messenger/getAllGroupsByUser/109')
+        fetch(`${obj.BASE_URL}api/controlCenter/messenger/getAllGroupsByUser/${obj.userId}`)
             .then(res => res.json())
             .then(res => {
                 if (res.error) {
@@ -51,7 +53,7 @@ export function fetchPlants() {
     }
     return dispatch => {
         dispatch(fetchContactsPending());
-        fetch('http://52.66.213.147:3000/api/controlCenter/getMultiplePlants', {
+        fetch(`${obj.BASE_URL}api/controlCenter/getMultiplePlants`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json; charset=utf-8'

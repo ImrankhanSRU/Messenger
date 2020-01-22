@@ -2,7 +2,9 @@ import React, { Component } from 'react'
 import { View, Text, Image, TextInput, Dimensions, TouchableHighlight } from 'react-native'
 import styles from './HomeCss'
 import { TabView, SceneMap, TabBar } from 'react-native-tab-view';
-import { fetchContacts, fetchGroups, fetchPlants } from "../../redux/actions/fetch";
+import { fetchContacts, fetchGroups, fetchPlants } from "../../redux/actions/network/fetch";
+import { fetchMessages, fetchGroupMessages } from '../../redux/actions/network/fetchMessages'
+import { fetchMessagesCount, setRead } from '../../redux/actions/network/messagesFunctions'
 import { connect } from 'react-redux'
 
 import List from '../List/List'
@@ -13,15 +15,23 @@ import commonStyles from '../styles'
 class Home extends Component {
 
    componentDidMount() {
+      this.props.fetchPlants();
       this.props.fetchContacts();
       this.props.fetchGroups();
-      this.props.fetchPlants();
+      this.props.fetchMessages();
+      this.props.fetchMessagesCount();
+   }
 
-
+   setMessagesAsRead = (topic) => {
+      this.props.setRead(topic)
+      this.props.fetchMessagesCount()
    }
 
    componentDidUpdate() {
-
+      console.log(this.props.counts)
+      if (this.props.plants && !this.props.groupMessages.length) {
+         this.props.fetchGroupMessages(this.props.plants)
+      }
    }
 
    getSnapshotBeforeUpdate() {
@@ -54,11 +64,31 @@ class Home extends Component {
    renderScene = ({ route, jumpTo }) => {
       switch (route.key) {
          case 'contacts':
-            return <List data={this.props.contacts} />;
+            return <List
+               data={this.props.contacts}
+               messages={this.props.messages}
+               navigation={this.props.navigation}
+               counts = {this.props.counts}
+               setRead = {this.setMessagesAsRead}
+            />;
          case 'groups':
-            return <List data={this.props.groups} />;
+            return <List
+               data={this.props.groups}
+               messages={this.props.groupMessages}
+               navigation={this.props.navigation}
+               counts = {this.props.counts}
+               setRead = {this.setMessagesAsRead}
+
+            />;
          case 'plants':
-            return <List data={this.props.plants} />;
+            return <List
+               data={this.props.plants}
+               messages={this.props.groupMessages}
+               navigation={this.props.navigation}
+               counts = {this.props.counts}
+               setRead = {this.setMessagesAsRead}
+
+            />;
          default:
             return null;
       }
@@ -67,7 +97,6 @@ class Home extends Component {
 
 
    render() {
-      console.log("render")
       return (
          <>
             <View style={[commonStyles.flexRow, styles.headerTop, { backgroundColor: "darkgreen" }]}>
@@ -82,7 +111,7 @@ class Home extends Component {
                <TabBar
                   {...props}
                   indicatorStyle={{ backgroundColor: 'white' }}
-                  style={{ backgroundColor: 'darkgreen' }}
+                  style={{ backgroundColor: '#06D755' }}
                />
             }
             navigationState={{ index, routes }}
@@ -116,14 +145,20 @@ class Home extends Component {
 const mapStateToProps = state => ({
    contacts: state.data.contacts,
    groups: state.data.groups,
-   plants: state.data.plants
+   plants: state.data.plants,
+   messages: state.messages.messages,
+   groupMessages: state.messages.groupMessages,
+   counts: state.view.counts
 });
 
 const mapDispatchToProps = dispatch => ({
    fetchContacts: () => dispatch(fetchContacts()),
    fetchGroups: () => dispatch(fetchGroups()),
-   fetchPlants: () => dispatch(fetchPlants())
-
+   fetchPlants: () => dispatch(fetchPlants()),
+   fetchMessages: () => dispatch(fetchMessages()),
+   fetchGroupMessages: (plants) => dispatch(fetchGroupMessages(plants)),
+   fetchMessagesCount: () => dispatch(fetchMessagesCount()),
+   setRead: (topic) => dispatch(setRead(topic))
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(Home)

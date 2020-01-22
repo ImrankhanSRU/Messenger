@@ -62,8 +62,8 @@ class Login extends Component {
     }
 
     goToHome = (hCode) => {
-        // Actions.home(hCode)
-        this.props.navigation.navigate('Home')
+        let {navigation} = this.props.props
+        navigation.navigate('Home')
     }
 
     checkConnection = () => {
@@ -83,7 +83,9 @@ class Login extends Component {
                 }
                 else {
                     obj.name = res.data.fname
-                    AsyncStorage.setItem('user', JSON.stringify({ name: res.data.fname, hCode: res.data.hcode }));
+                    AsyncStorage.setItem('mess-user', 
+                    JSON.stringify({ id: res.data.id, name: res.data.fname, hCode: res.data.hcode, mobile: res.data.mobile }));
+                    this.storeUserDetails(res.data)
                     this.setState({
                         showError: false,
                     })
@@ -91,6 +93,13 @@ class Login extends Component {
                     this.goToHome({ hCode: res.data.hcode })
                 }
             })
+    }
+
+    storeUserDetails = (data) => {
+        obj.userId = data.id
+        obj.name = data.fname
+        obj.user_hCode = data.hCode
+        obj.mobile = data.mobile
     }
 
     componentDidMount() {
@@ -101,7 +110,7 @@ class Login extends Component {
     render() {
         // const { navigate } = this.props.navigation;
 
-        disable = true
+        let disable = true
         if (this.state.email.length && this.state.password.length)
             disable = false
 

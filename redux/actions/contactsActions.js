@@ -1,6 +1,9 @@
-import { FETCH_CONTACTS_PENDING, FETCH_CONTACTS_SUCCESS, FETCH_CONTACTS_ERROR, FETCH_GROUPS_PENDING,
+import {
+    FETCH_CONTACTS_PENDING, FETCH_CONTACTS_SUCCESS, FETCH_CONTACTS_ERROR, FETCH_GROUPS_PENDING,
     FETCH_PLANTS_PENDING,
-FETCH_GROUPS_SUCCESS, FETCH_GROUPS_ERROR, FETCH_PLANTS_SUCCESS, FETCH_PLANTS_ERROR } from '../constants/constants';
+    FETCH_GROUPS_SUCCESS, FETCH_GROUPS_ERROR, FETCH_PLANTS_SUCCESS, FETCH_PLANTS_ERROR
+} from '../constants/constants';
+
 
 
 export function fetchContactsPending() {
@@ -10,6 +13,11 @@ export function fetchContactsPending() {
 }
 
 export function fetchContactsSuccess(contacts) {
+    contacts.data.map(item => {
+        if (item.mobile) {
+            item.topic = item.mobile
+        }
+    })
     return {
         type: FETCH_CONTACTS_SUCCESS,
         contacts: contacts.data
@@ -30,10 +38,15 @@ export function fetchGroupsPending() {
 }
 
 
-export function fetchGroupsSuccess(contacts) {
+export function fetchGroupsSuccess(groups) {
+    groups.data.map(item => {
+        if (item.gname) {
+            item.topic = `${item.gname}/${item.id}`
+        }
+    })
     return {
         type: FETCH_GROUPS_SUCCESS,
-        groups: contacts.data
+        groups: groups.data
     }
 }
 
@@ -50,10 +63,15 @@ export function fetchPlantsPending() {
     }
 }
 
-export function fetchPlantsSuccess(contacts) {
+export function fetchPlantsSuccess(plants) {
+    plants.data.map(item => {
+        if (item.itemName) {
+            item.topic = `plants/${item.itemName}`
+        }
+    })
     return {
         type: FETCH_PLANTS_SUCCESS,
-        plants: contacts.data
+        plants: plants.data
     }
 }
 

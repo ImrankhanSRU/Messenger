@@ -10,8 +10,18 @@ class Main extends Component {
         go: ''
     }
     componentDidMount() {
-        AsyncStorage.getItem('user').then(item => {
+        // AsyncStorage.removeItem("mess-user")
+        this.getUser()
+    }
+
+    getUser = async () => {
+        await AsyncStorage.getItem('mess-user').then(item => {
             if (item) {
+                let userData = JSON.parse(item)
+                obj.userId = userData.id
+                obj.user_hCode = userData.hCode
+                obj.name = userData.name
+                obj.mobile = userData.mobile
                 this.setState({
                     go: true
                 })
@@ -22,14 +32,16 @@ class Main extends Component {
                 })
             }
         })
-
     }
+
     render() {
-        if (this.state.go != '') {
+        if (typeof this.state.go == "boolean") {
             if (this.state.go) {
-                return <Home />
+                return <Home navigation = {this.props.navigation} />
             }
-            return <Login />
+            else {
+                return <Login props = {this.props} />
+            }
         }
         else {
             return (<></>)
