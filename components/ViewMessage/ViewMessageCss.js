@@ -49,7 +49,7 @@ export default StyleSheet.create({
         paddingTop: 7,
         // paddingBottom: 7,
         width: "85%",
-        fontSize: 17
+        fontSize: 17,
     },
 
     sendButton: {

@@ -1,6 +1,6 @@
 import {
     fetchMessagesCountPending, fetchMessagesCountSuccess, fetchMessagesCountError,
-    setReadPending, setReadError, setReadSuccess
+    setReadPending, setReadError, setReadSuccess, addNewPrivateMessage, addNewGroupMessage
 } from '../viewMessageAction';
 
 // import { fet }
@@ -49,12 +49,24 @@ export function setRead(topic) {
                 if (res.error) {
                     throw (res.error);
                 }
-                dispatch(setReadSuccess(topic));
-                return res;
+                dispatch(fetchMessagesCount())
+                // dispatch(setReadSuccess(topic, res));
+                // return res;
             })
             .catch(error => {
                 console.log(error)
                 dispatch(setReadError(error));
             })
+    }
+}
+
+export function addMessage(message) {
+    return dispatch => {
+        if (message.reciever.includes('/')) {
+            dispatch(addNewGroupMessage(message))
+        }
+        else {
+            dispatch(addNewPrivateMessage(message));
+        }
     }
 }

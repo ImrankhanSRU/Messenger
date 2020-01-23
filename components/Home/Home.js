@@ -4,17 +4,41 @@ import styles from './HomeCss'
 import { TabView, SceneMap, TabBar } from 'react-native-tab-view';
 import { fetchContacts, fetchGroups, fetchPlants } from "../../redux/actions/network/fetch";
 import { fetchMessages, fetchGroupMessages } from '../../redux/actions/network/fetchMessages'
-import { fetchMessagesCount, setRead } from '../../redux/actions/network/messagesFunctions'
+import { fetchMessagesCount, setRead, addMessage } from '../../redux/actions/network/messagesFunctions'
+import AsyncStorage from '@react-native-community/async-storage';
 import { connect } from 'react-redux'
-
 import List from '../List/List'
 import commonStyles from '../styles'
-
-
+const mqtt = require('mqtt')
 
 class Home extends Component {
 
+   options = {
+      port: 9000,
+      host: '52.66.213.147',
+   };
+   client = mqtt.connect('ws://52.66.213.147/mqtt', this.options)
+
+   subscribeToTopic = (topic) => {
+      this.client.subscribe(topic, (err) => {
+         // console.log(err)
+      })
+   }
+
+
+
    componentDidMount() {
+      this.subscribeToTopic("8124966143")
+      let scope = this
+      this.client.on('connect', function () {
+         // console.log("connected")
+      })
+
+      scope.client.on('message', function (topic, message) {
+         // message is Buffer
+         if (message != "shub")
+            scope.addNewMessage(JSON.parse(message))
+      })
       this.props.fetchPlants();
       this.props.fetchContacts();
       this.props.fetchGroups();
@@ -22,30 +46,42 @@ class Home extends Component {
       this.props.fetchMessagesCount();
    }
 
+
    setMessagesAsRead = (topic) => {
       this.props.setRead(topic)
-      this.props.fetchMessagesCount()
+   }
+
+   addNewMessage = (msg) => {
+      this.props.addMessage(msg)
    }
 
    componentDidUpdate() {
-      console.log(this.props.counts)
       if (this.props.plants && !this.props.groupMessages.length) {
          this.props.fetchGroupMessages(this.props.plants)
       }
+   }
+
+   shouldComponentUpdate() {
+      return true
    }
 
    getSnapshotBeforeUpdate() {
       let { contacts, groups, plants } = this.props
       contacts.map(user => {
          user.name = `${user.fname} ${user.lname}`
+         this.subscribeToTopic(user.topic)
       })
 
       groups.map(grp => {
          grp.name = grp.gname
+         this.subscribeToTopic(grp.topic)
+
       })
 
       plants.map(pl => {
          pl.name = pl.itemName
+         this.subscribeToTopic(pl.topic)
+
       })
       return true
    }
@@ -68,16 +104,16 @@ class Home extends Component {
                data={this.props.contacts}
                messages={this.props.messages}
                navigation={this.props.navigation}
-               counts = {this.props.counts}
-               setRead = {this.setMessagesAsRead}
+               counts={this.props.counts}
+               setRead={this.setMessagesAsRead}
             />;
          case 'groups':
             return <List
                data={this.props.groups}
                messages={this.props.groupMessages}
                navigation={this.props.navigation}
-               counts = {this.props.counts}
-               setRead = {this.setMessagesAsRead}
+               counts={this.props.counts}
+               setRead={this.setMessagesAsRead}
 
             />;
          case 'plants':
@@ -85,8 +121,8 @@ class Home extends Component {
                data={this.props.plants}
                messages={this.props.groupMessages}
                navigation={this.props.navigation}
-               counts = {this.props.counts}
-               setRead = {this.setMessagesAsRead}
+               counts={this.props.counts}
+               setRead={this.setMessagesAsRead}
 
             />;
          default:
@@ -158,7 +194,8 @@ const mapDispatchToProps = dispatch => ({
    fetchMessages: () => dispatch(fetchMessages()),
    fetchGroupMessages: (plants) => dispatch(fetchGroupMessages(plants)),
    fetchMessagesCount: () => dispatch(fetchMessagesCount()),
-   setRead: (topic) => dispatch(setRead(topic))
+   setRead: (topic) => dispatch(setRead(topic)),
+   addMessage: (msg) => dispatch(addMessage(msg))
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(Home)

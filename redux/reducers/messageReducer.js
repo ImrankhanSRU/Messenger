@@ -1,7 +1,8 @@
 import {
     FETCH_MESSAGES_PENDING, FETCH_MESSAGES_SUCCESS, FETCH_MESSAGES_ERROR,
     FETCH_GROUP_MESSAGES_ERROR, FETCH_GROUP_MESSAGES_SUCCESS,
-    FETCH_MESSAGES_COUNT_PENDING, FETCH_MESSAGES_COUNT_ERROR, FETCH_MESSAGES_COUNT_SUCCESS
+    FETCH_MESSAGES_COUNT_PENDING, FETCH_MESSAGES_COUNT_ERROR, FETCH_MESSAGES_COUNT_SUCCESS,
+    ADD_PRIVATE_MESSAGE_SUCCESS, ADD_GROUP_MESSAGE_SUCCESS
 } from '../constants/constants';
 
 const initialState = {
@@ -51,6 +52,38 @@ export function messageReducer(state = initialState, action) {
                 ...state,
                 pending: false,
                 error: action.error
+            }
+
+        case ADD_PRIVATE_MESSAGE_SUCCESS:
+            console.log(action)
+            let messages = { ...state.messages }
+            if(messages[0][action.message.sender]["Today"]) {
+                messages[0][action.message.sender]["Today"].push(action.message)
+            }
+            else {
+                messages[0][action.message.sender]["Today"] = [action.message]
+            }
+
+            console.log(messages)
+            
+            return {
+                ...state,
+                pending: false,
+                messages
+            }
+
+        case ADD_GROUP_MESSAGE_SUCCESS:
+            let groupMessages = { ...state.groupMessages }
+            if(groupMessages[0][action.message.sender]["Today"]) {
+                groupMessages[0][action.message.sender]["Today"].push(action.message)
+            }
+            else {
+                groupMessages[0][action.message.sender]["Today"] = [action.message]
+            }
+            return {
+                ...state,
+                pending: false,
+                groupMessages
             }
 
         default:

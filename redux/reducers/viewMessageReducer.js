@@ -1,6 +1,7 @@
 import {
     FETCH_MESSAGES_COUNT_PENDING, FETCH_MESSAGES_COUNT_ERROR, FETCH_MESSAGES_COUNT_SUCCESS,
-    SET_READ_MESSAGE_SUCCESS, SET_READ_MESSAGE_ERROR, SET_READ_MESSAGE_PENDING
+    SET_READ_MESSAGE_SUCCESS, SET_READ_MESSAGE_ERROR, SET_READ_MESSAGE_PENDING,
+    ADD_MESSAGE_SUCCESS
 } from '../constants/constants';
 
 const initialState = {
@@ -25,8 +26,6 @@ export function viewMessageReducer(state = initialState, action) {
 
 
         case SET_READ_MESSAGE_SUCCESS:
-            let newState = { ...state }
-            let counts = newState.counts[action.topic] = 0
             return {
                 ...state,
                 pending: false,

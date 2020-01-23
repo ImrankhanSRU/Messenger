@@ -1,25 +1,128 @@
 import React, { Component } from 'react'
-import { View, Text, Image, TextInput, Dimensions, TouchableHighlight, ScrollView } from 'react-native'
+import { View, Text, Image, TextInput, Keyboard } from 'react-native'
 import styles from './ViewMessageCss'
-import { connect } from 'react-redux'
 import obj from '../config'
-import { Keyboard } from 'react-native'
 import commonStyles from '../styles'
 import { TouchableOpacity } from 'react-native-gesture-handler'
 import InvertibleScrollView from 'react-native-invertible-scroll-view';
+const mqtt = require('mqtt')
+
 
 export default class ViewMessage extends Component {
-    constructor(props) {
-        super(props)
+
+    options = {
+        port: 9000,
+        host: '52.66.213.147',
+    };
+    client = mqtt.connect('ws://52.66.213.147/mqtt', this.options)
+
+    subscribeToTopic = (topic) => {
+        this.client.subscribe(topic, (err) => {
+            // console.log(err)
+        })
     }
 
+    constructor(props) {
+        super(props)
+        this.state = {
+            messages: props.navigation.state.params.messages,
+            msg: '',
+            keyboardOffset: 0
+        }
+    }
+
+    componentDidMount() {
+        let { topic } = this.props.navigation.state.params
+
+        let scope = this
+        this.client.on('connect', function () {
+            console.log("connected")
+        })
+
+        scope.client.on('message', function (topic, message) {
+            // message is Buffer
+            console.log(message)
+            if (message != "shub") {
+
+            }
+        })
+
+        this.subscribeToTopic(topic)
+        this.subscribeToTopic(obj.mobile)
+        this.keyboardDidShowListener = Keyboard.addListener(
+            'keyboardDidShow',
+            this._keyboardDidShow,
+        );
+        this.keyboardDidHideListener = Keyboard.addListener(
+            'keyboardDidHide',
+            this._keyboardDidHide,
+        );
+    }
+
+    componentWillUnmount() {
+        this.keyboardDidShowListener.remove();
+        this.keyboardDidHideListener.remove();
+    }
+
+    _keyboardDidShow = (event) => {
+        this.setState({
+            keyboardOffset: "11%",
+        })
+    }
+
+    _keyboardDidHide = () => {
+        this.setState({
+            keyboardOffset: 0,
+        })
+    }
+
+    addMessage = () => {
+        let date = new Date()
+        let year = date.getFullYear() % 100
+        let day = date.getDate()
+        let month = date.getMonth() + 1
+        let hours = date.getHours()
+        let minutes = date.getMinutes()
+        let type = "AM"
+        if (hours > 12) {
+            hours -= 12
+            type = "PM"
+        }
+        let time = `${hours}:${minutes} ${type}`
+        if (day < 10) {
+            day = `0${day}`
+        }
+        if (month < 10) {
+            month = `0${month}`
+        }
+        let fullDate = `${day}/${month}/${year}`
+        let messages = { ...this.state.messages }
+        let msg = {
+            msg: this.state.msg,
+            sender: "8124966143",
+            reciever: "889",
+            fullDate,
+            time
+        }
+        messages["Today"].push(msg)
+        this.setState({
+            messages,
+            msg: ''
+        })
+    }
+
+    handleInputChange = (text) => {
+        this.setState({
+            msg: text
+        })
+    }
 
     render() {
-        const content = { x: 100, y: 1000 }
-        const messages = this.props.navigation.state.params.messages
+        let messages = this.state.messages
         const name = this.props.navigation.state.params.name
         return (
-            <View style={[commonStyles.flexColumn, styles.viewMessageContainer]}>
+            <View style={[commonStyles.flexColumn, styles.viewMessageContainer]}
+                behavior="" enabled>
                 <View style={[commonStyles.flexRow, styles.headerTop, { backgroundColor: "darkgreen", padding: 10, alignItems: "center" }]}>
                     <View style={{ display: "flex", flexDirection: "row", alignItems: "center" }}>
                         <TouchableOpacity underlayColor="lightgray" onPress={() => this.props.navigation.goBack()} >
@@ -44,7 +147,7 @@ export default class ViewMessage extends Component {
                         {/* <View > */}
                         {
                             Object.keys(messages).map((date, i) => (
-                                <View style={{ marginBottom: 20 }} key = {i}>
+                                <View style={{ marginBottom: 20 }} key={i}>
                                     <View style={styles.date}>
                                         <View style={styles.line}></View>
                                         <Text style={styles.dateText}>{date}</Text>
@@ -85,9 +188,18 @@ export default class ViewMessage extends Component {
                     </InvertibleScrollView>
 
                 </View>
-                <View style={[commonStyles.flexRow, styles.inputContainer]}>
-                    <TextInput placeholder="Type a message" style={styles.input} />
-                    <TouchableOpacity style={styles.sendButton}>
+                <View style={[commonStyles.flexRow, styles.inputContainer, { bottom: this.state.keyboardOffset }]}>
+                    <TextInput placeholder="Type a message" onSubmitEditing={Keyboard.dismiss}
+                        style={styles.input}
+                        value={this.state.msg}
+                        onChangeText={(text) => {
+                            this.handleInputChange(text)
+                        }}
+                    // style={styles.input}
+                    />
+                    <TouchableOpacity style={styles.sendButton} onPress={() => {
+                        this.addMessage()
+                    }} >
                         <Image style={{ width: 30, height: 30 }} source={require('../../assets/send.png')} />
                     </TouchableOpacity>
                 </View>

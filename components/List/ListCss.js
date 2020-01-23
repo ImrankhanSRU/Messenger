@@ -31,7 +31,7 @@ export default StyleSheet.create({
     },
     indicator: {
         display: "flex",
-        alignItems: "flex-end"
+        alignItems: "flex-end",
     },
     count: {
         marginTop: 5,
@@ -52,5 +52,10 @@ export default StyleSheet.create({
     },
     unseen: {
         color: "#06D755"
+    },
+    userIcon: {
+        width: 40,
+        height: 40,
+        marginRight: 20
     }
 })

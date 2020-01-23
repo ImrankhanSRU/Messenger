@@ -1,6 +1,7 @@
 import {
     FETCH_MESSAGES_COUNT_PENDING, FETCH_MESSAGES_COUNT_SUCCESS, FETCH_MESSAGES_COUNT_ERROR,
-    SET_READ_MESSAGE_PENDING, SET_READ_MESSAGE_SUCCESS, SET_READ_MESSAGE_ERROR
+    SET_READ_MESSAGE_PENDING, SET_READ_MESSAGE_SUCCESS, SET_READ_MESSAGE_ERROR, 
+    ADD_PRIVATE_MESSAGE_SUCCESS, ADD_GROUP_MESSAGE_SUCCESS
 } from '../constants/constants';
 
 
@@ -43,9 +44,23 @@ export function setReadError(error) {
 }
 
 export function setReadSuccess(topic) {
-    console.log("setReadSuccess", topic)
     return {
         type: SET_READ_MESSAGE_SUCCESS,
         topic
+    }
+}
+
+export function addNewPrivateMessage(message) {
+    return {
+        type: ADD_PRIVATE_MESSAGE_SUCCESS,
+        message
+    }
+}
+
+
+export function addNewGroupMessage(message) {
+    return {
+        type: ADD_GROUP_MESSAGE_SUCCESS,
+        message
     }
 }
