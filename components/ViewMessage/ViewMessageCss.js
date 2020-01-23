@@ -55,7 +55,11 @@ export default StyleSheet.create({
     sendButton: {
         backgroundColor: "darkgreen",
         borderRadius: 50,
-        padding: 10
+        padding: 10,
+    },
+
+    sendButtonDisable: {
+        opacity: 0.3
     },
 
     msg: {

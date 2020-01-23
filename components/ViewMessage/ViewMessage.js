@@ -5,8 +5,10 @@ import obj from '../config'
 import commonStyles from '../styles'
 import { TouchableOpacity } from 'react-native-gesture-handler'
 import InvertibleScrollView from 'react-native-invertible-scroll-view';
-const mqtt = require('mqtt')
+import { connect } from 'react-redux'
+import { setRead } from '../../redux/actions/network/messagesFunctions'
 
+const mqtt = require('mqtt')
 
 export default class ViewMessage extends Component {
 
@@ -14,7 +16,9 @@ export default class ViewMessage extends Component {
         port: 9000,
         host: '52.66.213.147',
     };
+
     client = mqtt.connect('ws://52.66.213.147/mqtt', this.options)
+
 
     subscribeToTopic = (topic) => {
         this.client.subscribe(topic, (err) => {
@@ -27,27 +31,47 @@ export default class ViewMessage extends Component {
         this.state = {
             messages: props.navigation.state.params.messages,
             msg: '',
-            keyboardOffset: 0
+            keyboardOffset: 0,
+            disbleButton: true
         }
+
     }
 
     componentDidMount() {
         let { topic } = this.props.navigation.state.params
-
+        obj.currentTabTopic = topic
         let scope = this
         this.client.on('connect', function () {
             console.log("connected")
         })
 
+
         scope.client.on('message', function (topic, message) {
             // message is Buffer
-            console.log(message)
             if (message != "shub") {
+                let { messages } = { ...scope.state }
+                let time = JSON.parse(message).time
+                let msg = JSON.parse(message)
+                if (time.includes('/')) {
+                    msg.time = scope.formatMessageTime(time)
 
+                }
+                if (messages["Today"]) {
+                    messages["Today"].push(msg)
+                }
+                else {
+                    messages["Today"] = [msg]
+                }
+                // console.log(messages)
+                scope.setState({
+                    messages
+                })
             }
         })
 
-        this.subscribeToTopic(topic)
+        if (topic.includes('/')) {
+            this.subscribeToTopic(topic)
+        }
         this.subscribeToTopic(obj.mobile)
         this.keyboardDidShowListener = Keyboard.addListener(
             'keyboardDidShow',
@@ -60,8 +84,12 @@ export default class ViewMessage extends Component {
     }
 
     componentWillUnmount() {
+        obj.currentTabTopic = ''
+        let { topic } = this.props.navigation.state.params
         this.keyboardDidShowListener.remove();
         this.keyboardDidHideListener.remove();
+        this.props.navigation.state.params.setRead(topic)
+        this.client.end()
     }
 
     _keyboardDidShow = (event) => {
@@ -99,12 +127,21 @@ export default class ViewMessage extends Component {
         let messages = { ...this.state.messages }
         let msg = {
             msg: this.state.msg,
-            sender: "8124966143",
-            reciever: "889",
+            sender: obj.mobile,
+            reciever: obj.currentTabTopic,
             fullDate,
+            sname: obj.name,
             time
         }
-        messages["Today"].push(msg)
+
+        this.client.publish(obj.currentTabTopic, JSON.stringify(msg), false)
+
+        if (messages["Today"]) {
+            messages["Today"].push(msg)
+        }
+        else {
+            messages["Today"] = [msg]
+        }
         this.setState({
             messages,
             msg: ''
@@ -112,13 +149,31 @@ export default class ViewMessage extends Component {
     }
 
     handleInputChange = (text) => {
+        let disbleButton = true
+        if (text) {
+            disbleButton = false
+        }
         this.setState({
-            msg: text
+            msg: text,
+            disbleButton
         })
     }
 
+    formatMessageTime = (msgTime) => {
+        let time = new Date(msgTime).toLocaleTimeString().split(':').slice(0, 2).join(':')
+        let type = new Date(msgTime).toLocaleTimeString().split(' ')[1];
+        return `${time} ${type}`
+
+    }
+
     render() {
-        let messages = this.state.messages
+        let { messages } = this.props.navigation.state.params
+        let disbleButton = this.state.disbleButton
+        let days = Object.keys(messages)
+        if (days.includes("Today") && days.indexOf("Today") > 0) {
+            days.pop()
+            days.splice(0, 0, "Today")
+        }
         const name = this.props.navigation.state.params.name
         return (
             <View style={[commonStyles.flexColumn, styles.viewMessageContainer]}
@@ -146,7 +201,7 @@ export default class ViewMessage extends Component {
                     <InvertibleScrollView inverted contentContainerStyle={styles.messages}>
                         {/* <View > */}
                         {
-                            Object.keys(messages).map((date, i) => (
+                            days.map((date, i) => (
                                 <View style={{ marginBottom: 20 }} key={i}>
                                     <View style={styles.date}>
                                         <View style={styles.line}></View>
@@ -197,9 +252,12 @@ export default class ViewMessage extends Component {
                         }}
                     // style={styles.input}
                     />
-                    <TouchableOpacity style={styles.sendButton} onPress={() => {
-                        this.addMessage()
-                    }} >
+                    <TouchableOpacity style={[styles.sendButton,
+                    !this.state.msg.length ? { backgroundColor: "lightgray" } : {}]}
+                        disabled={this.state.disbleButton}
+                        onPress={() => {
+                            this.addMessage()
+                        }} >
                         <Image style={{ width: 30, height: 30 }} source={require('../../assets/send.png')} />
                     </TouchableOpacity>
                 </View>
@@ -208,3 +266,8 @@ export default class ViewMessage extends Component {
         )
     }
 }
+
+// const mapDispatchToProps = dispatch => ({
+    // setRead: (topic) => dispatch(setRead(topic))
+// });
+

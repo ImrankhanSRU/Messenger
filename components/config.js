@@ -11,6 +11,7 @@ let obj = {
     name: '',
     mobile: '',
     isConnected: true,
+    currentTabTopic: ''
 }
 
 export default obj

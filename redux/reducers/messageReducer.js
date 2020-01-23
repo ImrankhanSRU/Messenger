@@ -55,17 +55,21 @@ export function messageReducer(state = initialState, action) {
             }
 
         case ADD_PRIVATE_MESSAGE_SUCCESS:
-            console.log(action)
             let messages = { ...state.messages }
-            if(messages[0][action.message.sender]["Today"]) {
+            if (Object.keys(messages[0][action.message.sender]).includes("Today")) {
                 messages[0][action.message.sender]["Today"].push(action.message)
             }
             else {
-                messages[0][action.message.sender]["Today"] = [action.message]
+                // messages[0] = {
+                //     "1": {"Today": [], "1263721": []},
+                //     "2": {"yes": [], "2323": []}
+                // }
+
+                let newObj = { "Today": [action.message], ...messages[0][action.message.sender] }
+                messages[0][action.message.sender] = newObj
+                // console.log(messages)
             }
 
-            console.log(messages)
-            
             return {
                 ...state,
                 pending: false,
@@ -74,16 +78,20 @@ export function messageReducer(state = initialState, action) {
 
         case ADD_GROUP_MESSAGE_SUCCESS:
             let groupMessages = { ...state.groupMessages }
-            if(groupMessages[0][action.message.sender]["Today"]) {
-                groupMessages[0][action.message.sender]["Today"].push(action.message)
+            if (Object.keys(groupMessages[0][action.message.reciever]).includes("Today")) {
+                groupMessages[0][action.message.reciever]["Today"].push(action.message)
             }
             else {
-                groupMessages[0][action.message.sender]["Today"] = [action.message]
+   
+                let newObj = { "Today": [action.message], ...groupMessages[0][action.message.sender] }
+                groupMessages[0][action.message.sender] = newObj
+
             }
+
             return {
                 ...state,
                 pending: false,
-                groupMessages
+                groupMessages,
             }
 
         default:

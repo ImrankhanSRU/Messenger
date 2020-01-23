@@ -61,6 +61,7 @@ export function setRead(topic) {
 }
 
 export function addMessage(message) {
+    console.log(message)
     return dispatch => {
         if (message.reciever.includes('/')) {
             dispatch(addNewGroupMessage(message))

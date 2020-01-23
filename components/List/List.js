@@ -4,15 +4,15 @@ import commonStyles from '../styles'
 import styles from './ListCss'
 import obj from '../config'
 
-function goToMessages(messages, navigation, item) {
-    navigation.navigate("ViewMessage", { messages, name: item.name, topic: item.topic })
+function goToMessages(messages, navigation, item, setRead) {
+    navigation.navigate("ViewMessage", { messages, name: item.name, topic: item.topic, setRead })
 }
 
 async function filterMessages(messages, item, navigation, setRead) {
     let messagesToRead = [];
     messagesToRead = messages[0][item.topic]
     setRead(item.topic)
-    goToMessages(messagesToRead, navigation, item)
+    goToMessages(messagesToRead, navigation, item, setRead)
 
 }
 
@@ -54,7 +54,9 @@ const formatDate = (date) => {
 const getLastMessage = (msgs, topic) => {
     let firstKey = [];
     if (msgs) {
-        firstKey = Object.keys(msgs[topic])
+        if (msgs[topic]) {
+            firstKey = Object.keys(msgs[topic])
+        }
     }
     if (firstKey.length) {
         let lastMsg = msgs[topic][firstKey[0]][msgs[topic][firstKey[0]].length - 1].msg
@@ -64,6 +66,7 @@ const getLastMessage = (msgs, topic) => {
 }
 
 export default function List(props) {
+    // console.log(props)
     let { messages } = props
     return (
         <ScrollView style={styles.tab}>
@@ -74,10 +77,10 @@ export default function List(props) {
                         onPress={() => { filterMessages(props.messages, item, props.navigation, props.setRead) }}>
                         <View style={[commonStyles.flexRow, styles.item]}>
                             <View style={[styles.image, commonStyles.flexColumn]}>
-                                <Image style={[styles.userIcon, item.mobile ? {width: 50, height: 50} : null]} 
-                                source={ item.mobile ? require('../../assets/user-icon.png'): 
-                                (item.gname) ?
-                                require('../../assets/groups.png'): require('../../assets/plant.png')  } />
+                                <Image style={[styles.userIcon, item.mobile ? { width: 50, height: 50 } : null]}
+                                    source={item.mobile ? require('../../assets/user-icon.png') :
+                                        (item.gname) ?
+                                            require('../../assets/groups.png') : require('../../assets/plant.png')} />
                             </View>
                             <View style={[commonStyles.flexRow, styles.nameContainer]}>
                                 <View>
@@ -85,7 +88,7 @@ export default function List(props) {
                                     <Text style={{ color: "gray" }}>
                                         {
 
-
+                                            // Object.keys(messages[0][item.topic]).length > 0 &&
                                             ((getLastMessage(messages[0], item.topic)).length > 30) ?
                                                 (((getLastMessage(messages[0], item.topic)).substring(0, 30 - 3)) + '...') :
                                                 getLastMessage(messages[0], item.topic)

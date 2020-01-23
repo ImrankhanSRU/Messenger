@@ -9,6 +9,7 @@ import AsyncStorage from '@react-native-community/async-storage';
 import { connect } from 'react-redux'
 import List from '../List/List'
 import commonStyles from '../styles'
+import obj from '../config';
 const mqtt = require('mqtt')
 
 class Home extends Component {
@@ -19,6 +20,7 @@ class Home extends Component {
    };
    client = mqtt.connect('ws://52.66.213.147/mqtt', this.options)
 
+
    subscribeToTopic = (topic) => {
       this.client.subscribe(topic, (err) => {
          // console.log(err)
@@ -28,7 +30,6 @@ class Home extends Component {
 
 
    componentDidMount() {
-      this.subscribeToTopic("8124966143")
       let scope = this
       this.client.on('connect', function () {
          // console.log("connected")
@@ -36,8 +37,13 @@ class Home extends Component {
 
       scope.client.on('message', function (topic, message) {
          // message is Buffer
-         if (message != "shub")
-            scope.addNewMessage(JSON.parse(message))
+         if (message != "shub") {
+            let msg = JSON.parse(message)
+            if (msg.reciever != obj.currentTabTopic && msg.sender != obj.currentTabTopic) {
+               console.log("adding")
+               scope.addNewMessage(msg)
+            }
+         }
       })
       this.props.fetchPlants();
       this.props.fetchContacts();
@@ -52,7 +58,29 @@ class Home extends Component {
    }
 
    addNewMessage = (msg) => {
+      let date = new Date()
+      let year = date.getFullYear() % 100
+      let day = date.getDate()
+      let month = date.getMonth() + 1
+      let hours = date.getHours()
+      let minutes = date.getMinutes()
+      let type = "AM"
+      if (hours > 12) {
+         hours -= 12
+         type = "PM"
+      }
+      let time = `${hours}:${minutes} ${type}`
+      if (day < 10) {
+         day = `0${day}`
+      }
+      if (month < 10) {
+         month = `0${month}`
+      }
+      let fullDate = `${day}/${month}/${year}`
+      msg["fullDate"] = fullDate
+      msg.time = time
       this.props.addMessage(msg)
+      this.props.fetchMessagesCount()
    }
 
    componentDidUpdate() {
@@ -98,6 +126,12 @@ class Home extends Component {
    };
 
    renderScene = ({ route, jumpTo }) => {
+      // let messages = []
+      // console.log(this.props.groupMessages)
+      // if (this.props.messages.length && this.props.groupMessages.length) {
+      //    messages = [{ ...this.props.messages[0], ...this.props.groupMessages[0] }]
+      // }
+      // if (messages.length) {
       switch (route.key) {
          case 'contacts':
             return <List
@@ -128,6 +162,7 @@ class Home extends Component {
          default:
             return null;
       }
+      // }
    };
 
 
