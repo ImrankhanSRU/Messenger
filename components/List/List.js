@@ -5,10 +5,13 @@ import styles from './ListCss'
 import obj from '../config'
 
 function goToMessages(messages, navigation, item, setRead) {
-    navigation.navigate("ViewMessage", { messages, name: item.name, topic: item.topic, setRead })
+    let userIcon = item.mobile ? 'contact' :
+        (item.gname) ? 'group' : 'plant'
+    navigation.navigate("ViewMessage", { messages, name: item.name, topic: item.topic, setRead, userIcon })
 }
 
-async function filterMessages(messages, item, navigation, setRead) {
+async function filterMessages(messages, item, navigation, setRead, handleOutside) {
+    handleOutside()
     let messagesToRead = [];
     messagesToRead = messages[0][item.topic]
     setRead(item.topic)
@@ -65,8 +68,11 @@ const getLastMessage = (msgs, topic) => {
     return ''
 }
 
+
+
+  
+
 export default function List(props) {
-    console.log(props)
     let { messages } = props
     return (
         <ScrollView style={styles.tab}>
@@ -74,7 +80,7 @@ export default function List(props) {
                 props.data.map((item, index) => (
                     (item.mobile || item.gname || item.itemName) && (item.mobile != obj.mobile) &&
                     <TouchableHighlight underlayColor="lightgray" key={index}
-                        onPress={() => { filterMessages(props.messages, item, props.navigation, props.setRead) }}>
+                        onPress={() => { filterMessages(props.messages, item, props.navigation, props.setRead, props.handleOutside) }}>
                         <View style={[commonStyles.flexRow, styles.item]}>
                             <View style={[styles.image, commonStyles.flexColumn]}>
                                 <Image style={[styles.userIcon, item.mobile ? { width: 50, height: 50 } : null]}

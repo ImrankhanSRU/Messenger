@@ -10,11 +10,11 @@ class Header extends Component {
       return (
          <View style={styles.header}>
             <Text style={styles.heading}>Messenger</Text>
-            <Image
+            {/* <Image
                width={width / 1.7}
                style={styles.headerImg}
                source={require('../../assets/vena-logo.png')}
-            />
+            /> */}
          </View>
       )
    }

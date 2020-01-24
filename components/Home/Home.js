@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { View, Text, Image, TextInput, Dimensions, TouchableHighlight, TouchableOpacity } from 'react-native'
+import { View, Text, Image, TextInput, Dimensions, TouchableHighlight, TouchableWithoutFeedback, TouchableOpacity } from 'react-native'
 import styles from './HomeCss'
 import { TabView, SceneMap, TabBar } from 'react-native-tab-view';
 import { fetchContacts, fetchGroups, fetchPlants } from "../../redux/actions/network/fetch";
@@ -21,7 +21,6 @@ const mqtt = require('mqtt')
 
 class Home extends Component {
 
-
    options = {
       port: 9000,
       host: '52.66.213.147',
@@ -35,11 +34,11 @@ class Home extends Component {
       })
    }
 
-   hello = new Sound(require('../../assets/notify.mp3'), Sound.MAIN_BUNDLE,  error => console.log(error) )
+   hello = new Sound(require('../../assets/notify.mp3'), Sound.MAIN_BUNDLE, error => console.log(error))
 
 
    componentDidMount() {
-   
+
       let scope = this
       this.client.on('connect', function () {
          // console.log("connected")
@@ -48,10 +47,13 @@ class Home extends Component {
       scope.client.on('message', function (topic, message) {
          // message is Buffer
          if (message != "shub") {
-            scope.hello.play()
             let msg = JSON.parse(message)
+
+            if (msg.sender != obj.mobile) {
+               scope.hello.play()
+            }
+
             if (msg.reciever != obj.currentTabTopic && msg.sender != obj.currentTabTopic) {
-               console.log("adding")
                scope.addNewMessage(msg)
             }
          }
@@ -66,6 +68,8 @@ class Home extends Component {
 
    setMessagesAsRead = (topic) => {
       this.props.setRead(topic)
+      this.props.fetchMessages()
+      this.props.fetchGroupMessages(this.props.plants)
    }
 
    addNewMessage = (msg) => {
@@ -134,9 +138,11 @@ class Home extends Component {
          { key: 'plants', title: 'PLANTS' }
 
       ],
+      showMenu: false
    };
 
    renderScene = ({ route, jumpTo }) => {
+
       // let messages = []
       // console.log(this.props.groupMessages)
       // if (this.props.messages.length && this.props.groupMessages.length) {
@@ -151,6 +157,7 @@ class Home extends Component {
                navigation={this.props.navigation}
                counts={this.props.counts}
                setRead={this.setMessagesAsRead}
+               handleOutside={this.handleOutside}
             />;
          case 'groups':
             return <List
@@ -159,6 +166,8 @@ class Home extends Component {
                navigation={this.props.navigation}
                counts={this.props.counts}
                setRead={this.setMessagesAsRead}
+               handleOutside={this.handleOutside}
+
 
             />;
          case 'plants':
@@ -168,6 +177,7 @@ class Home extends Component {
                navigation={this.props.navigation}
                counts={this.props.counts}
                setRead={this.setMessagesAsRead}
+               handleOutside={this.handleOutside}
 
             />;
          default:
@@ -176,29 +186,60 @@ class Home extends Component {
       // }
    };
 
+   toggleMenu = () => {
+      this.setState({
+         showMenu: !this.state.showMenu
+      })
+   }
 
+   handleOutside = () => {
+      this.setState({
+         showMenu: false
+      })
+   }
+
+   logout = () => {
+      AsyncStorage.removeItem('mess-user')
+      this.props.navigation.navigate("Login")
+   }
 
    render() {
       return (
          <>
             {
-               false &&
+               this.state.showMenu &&
+
                <View style={[styles.userMenu]}>
                   <View style={styles.menuItem}>
-                     <Text>{obj.name}</Text>
+                     <View style={{ display: "flex", flexDirection: "row" }}>
+                        <Text style={{ fontSize: 16 }}>
+                           Welcome
+                        </Text>
+                        <Text style={styles.userName}>
+                           {obj.name}
+                        </Text>
+                     </View>
                   </View>
-                  <TouchableOpacity style={styles.menuItem}>
-                     <Text>Logout</Text>
-                  </TouchableOpacity>
+                  <TouchableHighlight underlayColor="lightgray" onPress={() => { this.logout() }} style={styles.menuItem}>
+                     <Text style={{ fontSize: 16 }}>Logout</Text>
+                  </TouchableHighlight >
                </View>
             }
-            <View style={[commonStyles.flexRow, styles.headerTop, { backgroundColor: "darkgreen" }]}>
-               <Text style={styles.heading}>Messenger</Text>
-               <View style={{ display: "flex", flexDirection: "row" }}>
-                  <Image style={[commonStyles.icon, commonStyles.mRight10]} source={require('../../assets/search.png')} />
-                  <Image style={commonStyles.icon} source={require('../../assets/menu-vertical.png')} />
+            <TouchableWithoutFeedback
+               onPress={() => { this.handleOutside() }}>
+               <View style={[commonStyles.flexRow, styles.headerTop, { backgroundColor: "darkgreen" }]}>
+                  <Text style={styles.heading}>Messenger</Text>
+                  <View style={{ display: "flex", flexDirection: "row" }}>
+                     <Image style={[commonStyles.icon, commonStyles.mRight10]} source={require('../../assets/search.png')} />
+                     <TouchableOpacity onPress={() => {
+                        this.toggleMenu()
+                     }} >
+                        <Image style={commonStyles.icon} source={require('../../assets/menu-vertical.png')} />
+                     </TouchableOpacity>
+                  </View>
                </View>
-            </View>
+            </TouchableWithoutFeedback>
+
 
             {/* <TabView
             renderTabBar={props =>
@@ -224,7 +265,7 @@ class Home extends Component {
                }
                navigationState={this.state}
                renderScene={this.renderScene}
-               onIndexChange={index => this.setState({ index })}
+               onIndexChange={index => { console.log(index); this.handleOutside(), this.setState({ index }) }}
                initialLayout={this.initialLayout}
                style={{ backgroundColor: 'white', color: 'black' }}
                tabStyle={{ backgroundColor: 'white' }}

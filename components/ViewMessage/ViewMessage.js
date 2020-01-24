@@ -32,17 +32,29 @@ export default class ViewMessage extends Component {
             messages: props.navigation.state.params.messages,
             msg: '',
             keyboardOffset: 0,
-            disbleButton: true
+            disbleButton: true,
+            colors: {}
         }
 
     }
 
     componentDidMount() {
+        this.getRandomColor(5)
         let { topic } = this.props.navigation.state.params
+        if (topic.includes('/')) {
+            if (topic.includes('plant')) {
+                this.getAllUsers()
+            }
+            else {
+                let groupId = topic.split('/')[1]
+                this.getGroupDetails(groupId)
+            }
+
+        }
+
         obj.currentTabTopic = topic
         let scope = this
         this.client.on('connect', function () {
-            console.log("connected")
         })
 
 
@@ -56,7 +68,9 @@ export default class ViewMessage extends Component {
                     msg.time = scope.formatMessageTime(time)
                     // msg.fullDate = new Date().toLocaleDateString()
                 }
-                scope.addMessage(msg)
+                if (msg.sender != obj.mobile) {
+                    scope.addMessage(msg)
+                }
                 // if (messages["Today"]) {
                 //     messages["Today"].push(msg)
                 // }
@@ -84,6 +98,13 @@ export default class ViewMessage extends Component {
         );
     }
 
+    getAllUsers = async () => {
+        const response = await fetch(`http://52.66.213.147:3000/api/userManagement/getUserDetails`)
+        const json = await response.json();
+        this.getRandomColor(json.data)
+        
+    }
+
     componentWillUnmount() {
         obj.currentTabTopic = ''
         let { topic } = this.props.navigation.state.params
@@ -105,7 +126,15 @@ export default class ViewMessage extends Component {
         })
     }
 
+    getGroupDetails = async (id) => {
+        const response = await fetch(`http://52.66.213.147:3000/api/controlCenter/messenger/getGroupDetails/${id}`)
+        const json = await response.json();
+        this.getRandomColor(json.data.groupMembers)
+    }
+
     addMessage = (newMsg) => {
+
+        let sendMsg = 0;
         let date = new Date()
         let year = date.getFullYear() % 100
         let day = date.getDate()
@@ -142,6 +171,7 @@ export default class ViewMessage extends Component {
         }
         else {
             msgObj["msg"] = this.state.msg
+            sendMsg = 1;
         }
         if (messages["Today"]) {
             messages["Today"].push(msgObj)
@@ -153,10 +183,8 @@ export default class ViewMessage extends Component {
             messages,
             msg: ''
         })
-
-        if (!newMsg)
+        if (sendMsg)
             this.client.publish(obj.currentTabTopic, JSON.stringify(msgObj), false)
-
 
     }
 
@@ -172,17 +200,40 @@ export default class ViewMessage extends Component {
     }
 
     formatMessageTime = (msgTime) => {
-        console.log(msgTime)
         let time = new Date(msgTime).toLocaleTimeString().split(':').slice(0, 2).join(':')
-        console.log(time)
         let type = new Date(msgTime).toLocaleTimeString().split(' ')[1];
         return `${time} ${type}`
 
     }
 
+    getRandomColor(groupMembers) {
+        var letters = '0123456789ABCDEF';
+        var allColors = {}
+        var color = '#';
+        for (let i = 0; i < groupMembers.length; i++) {
+            color = '#'
+            for (var j = 0; j < 6; j++) {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            allColors[groupMembers[i].mobile] = color
+        }
+        this.setState({
+            colors: allColors
+        })
+    }
+
+
+    getRandomArbitrary = (min, max) => Math.random() * (max - min) + min
+
     render() {
         let { messages } = this.state
         let disbleButton = this.state.disbleButton
+        let { userIcon, topic } = this.props.navigation.state.params
+        let iconObj = {
+            contact: require('../../assets/user-icon.png'),
+            group: require('../../assets/groups.png'),
+            plant: require('../../assets/plant.png')
+        }
         let days = Object.keys(messages)
         if (days.includes("Today") && days.indexOf("Today") > 0) {
             days.pop()
@@ -197,11 +248,12 @@ export default class ViewMessage extends Component {
                         <TouchableOpacity underlayColor="lightgray" onPress={() => this.props.navigation.goBack()} >
                             <Image style={{ marginRight: 10, width: 18, height: 18 }} source={require('../../assets/back.png')} />
                         </TouchableOpacity>
-                        <Image style={{ width: 40, height: 40, marginRight: 10, borderRadius: 50 }} source={require('../../assets/user-icon.png')} />
+                        <Image style={[{ width: 40, height: 40, marginRight: 10, borderRadius: 50 }]}
+                            source={iconObj[userIcon]} />
                         <Text style={[styles.heading, { color: "white", fontSize: 20 }]}>
                             {
-                                ((name).length > 23) ?
-                                    (((name).substring(0, 23 - 3)) + '...') :
+                                ((name).length > 20) ?
+                                    (((name).substring(0, 20 - 3)) + '...') :
                                     name
                             }
                         </Text>
@@ -227,12 +279,26 @@ export default class ViewMessage extends Component {
                                                 <View key={index} style={[styles.message, commonStyles.flexRow, item.sender == obj.mobile ? styles.myMessage : null]}>
                                                     <View style={styles.msg}>
                                                         <View style={styles.msgText}>
-                                                            <Text>
-                                                                {item.msg}
-                                                            </Text>
+                                                            <View>
+                                                                {
+                                                                    item.sender != obj.mobile &&
+                                                                    item.sname != "NA" &&
+                                                                    topic.includes('/') &&
+                                                                    // index > 0 &&
+                                                                    // messages[date][index - 1].sname != item.sname &&
+                                                                    <Text style={{ color: this.state.colors[item.sender] }}>
+                                                                        {item.sname}
+                                                                    </Text>
+                                                                }
+                                                                <Text>
+                                                                    {item.msg}
+                                                                </Text>
+                                                            </View>
+
                                                             {
                                                                 item.msg.length < 30 &&
-                                                                <Text style={[styles.msgTime, styles.innerTime]}>{item.time}</Text>
+                                                                <Text style={[styles.msgTime, styles.innerTime,
+                                                                item.sender == obj.mobile || !topic.includes('/') ? { marginTop: 5 } : { marginTop: 25 }]}>{item.time}</Text>
                                                             }
                                                         </View>
                                                         {/* <Text style={styles.msgTime}>{item.time}</Text> */}

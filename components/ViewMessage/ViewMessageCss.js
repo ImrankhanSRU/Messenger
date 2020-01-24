@@ -27,13 +27,15 @@ export default StyleSheet.create({
         // textAlign: "right",
         alignSelf: "flex-start",
         maxWidth: "80%",
+        borderStyle: "solid"
+
     },
     myMessage: {
         // marginLeft: "20%",
         marginRight: 0,
         // width: 100,
         backgroundColor: "#dcf8c6",
-        alignSelf: "flex-end"
+        alignSelf: "flex-end",
     },
 
     inputContainer: {
@@ -79,8 +81,7 @@ export default StyleSheet.create({
         textAlign: "right"
     },
     innerTime: {
-        marginLeft: 10,
-        marginTop: 7
+        marginLeft: 15,
     },
     date: {
         display: "flex",
@@ -106,5 +107,9 @@ export default StyleSheet.create({
         borderTopColor: "#c9c9c9",
         borderTopWidth: 1,
         zIndex: -1,
+    },
+
+    groupIcon: {
+        backgroundColor: "white"
     }
 })

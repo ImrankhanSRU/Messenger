@@ -53,10 +53,17 @@ export default StyleSheet.create({
         shadowOpacity: 0.8,
         shadowRadius: 2,  
         elevation: 5,
-        borderRadius: 5
+        borderRadius: 5,
+        paddingTop: 10,
+        paddingBottom: 10,
+        width: '50%'
     },
     menuItem: {
         padding: 10,
-        paddingRight: 50
+    },
+    userName: {
+        fontSize: 16,
+        marginLeft: 10,
+        color: "green"
     }
 })
