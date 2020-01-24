@@ -49,23 +49,24 @@ export default class ViewMessage extends Component {
         scope.client.on('message', function (topic, message) {
             // message is Buffer
             if (message != "shub") {
-                let { messages } = { ...scope.state }
+                // let { messages } = { ...scope.state }
                 let time = JSON.parse(message).time
                 let msg = JSON.parse(message)
                 if (time.includes('/')) {
                     msg.time = scope.formatMessageTime(time)
-
+                    // msg.fullDate = new Date().toLocaleDateString()
                 }
-                if (messages["Today"]) {
-                    messages["Today"].push(msg)
-                }
-                else {
-                    messages["Today"] = [msg]
-                }
+                scope.addMessage(msg)
+                // if (messages["Today"]) {
+                //     messages["Today"].push(msg)
+                // }
+                // else {
+                //     messages["Today"] = [msg]
+                // }
                 // console.log(messages)
-                scope.setState({
-                    messages
-                })
+                // scope.setState({
+                //     messages
+                // })
             }
         })
 
@@ -104,7 +105,7 @@ export default class ViewMessage extends Component {
         })
     }
 
-    addMessage = () => {
+    addMessage = (newMsg) => {
         let date = new Date()
         let year = date.getFullYear() % 100
         let day = date.getDate()
@@ -116,6 +117,9 @@ export default class ViewMessage extends Component {
             hours -= 12
             type = "PM"
         }
+        if (minutes < 10) {
+            minutes = `0${minutes}`
+        }
         let time = `${hours}:${minutes} ${type}`
         if (day < 10) {
             day = `0${day}`
@@ -125,27 +129,35 @@ export default class ViewMessage extends Component {
         }
         let fullDate = `${day}/${month}/${year}`
         let messages = { ...this.state.messages }
-        let msg = {
-            msg: this.state.msg,
+        let msgObj = {
             sender: obj.mobile,
             reciever: obj.currentTabTopic,
             fullDate,
             sname: obj.name,
             time
         }
-
-        this.client.publish(obj.currentTabTopic, JSON.stringify(msg), false)
-
-        if (messages["Today"]) {
-            messages["Today"].push(msg)
+        if (newMsg) {
+            msgObj = newMsg
+            msgObj.fullDate = fullDate
         }
         else {
-            messages["Today"] = [msg]
+            msgObj["msg"] = this.state.msg
+        }
+        if (messages["Today"]) {
+            messages["Today"].push(msgObj)
+        }
+        else {
+            messages["Today"] = [msgObj]
         }
         this.setState({
             messages,
             msg: ''
         })
+
+        if (!newMsg)
+            this.client.publish(obj.currentTabTopic, JSON.stringify(msgObj), false)
+
+
     }
 
     handleInputChange = (text) => {
@@ -160,14 +172,16 @@ export default class ViewMessage extends Component {
     }
 
     formatMessageTime = (msgTime) => {
+        console.log(msgTime)
         let time = new Date(msgTime).toLocaleTimeString().split(':').slice(0, 2).join(':')
+        console.log(time)
         let type = new Date(msgTime).toLocaleTimeString().split(' ')[1];
         return `${time} ${type}`
 
     }
 
     render() {
-        let { messages } = this.props.navigation.state.params
+        let { messages } = this.state
         let disbleButton = this.state.disbleButton
         let days = Object.keys(messages)
         if (days.includes("Today") && days.indexOf("Today") > 0) {

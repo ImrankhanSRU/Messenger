@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { View, Text, Image, TextInput, Dimensions, TouchableHighlight } from 'react-native'
+import { View, Text, Image, TextInput, Dimensions, TouchableHighlight, TouchableOpacity } from 'react-native'
 import styles from './HomeCss'
 import { TabView, SceneMap, TabBar } from 'react-native-tab-view';
 import { fetchContacts, fetchGroups, fetchPlants } from "../../redux/actions/network/fetch";
@@ -10,9 +10,17 @@ import { connect } from 'react-redux'
 import List from '../List/List'
 import commonStyles from '../styles'
 import obj from '../config';
+// import Sound from 'react-native-sound';
+
+var Sound = require('react-native-sound')
+
+Sound.setCategory('Playback');
+
+
 const mqtt = require('mqtt')
 
 class Home extends Component {
+
 
    options = {
       port: 9000,
@@ -27,9 +35,11 @@ class Home extends Component {
       })
    }
 
+   hello = new Sound(require('../../assets/notify.mp3'), Sound.MAIN_BUNDLE,  error => console.log(error) )
 
 
    componentDidMount() {
+   
       let scope = this
       this.client.on('connect', function () {
          // console.log("connected")
@@ -38,6 +48,7 @@ class Home extends Component {
       scope.client.on('message', function (topic, message) {
          // message is Buffer
          if (message != "shub") {
+            scope.hello.play()
             let msg = JSON.parse(message)
             if (msg.reciever != obj.currentTabTopic && msg.sender != obj.currentTabTopic) {
                console.log("adding")
@@ -170,6 +181,17 @@ class Home extends Component {
    render() {
       return (
          <>
+            {
+               false &&
+               <View style={[styles.userMenu]}>
+                  <View style={styles.menuItem}>
+                     <Text>{obj.name}</Text>
+                  </View>
+                  <TouchableOpacity style={styles.menuItem}>
+                     <Text>Logout</Text>
+                  </TouchableOpacity>
+               </View>
+            }
             <View style={[commonStyles.flexRow, styles.headerTop, { backgroundColor: "darkgreen" }]}>
                <Text style={styles.heading}>Messenger</Text>
                <View style={{ display: "flex", flexDirection: "row" }}>
@@ -177,6 +199,7 @@ class Home extends Component {
                   <Image style={commonStyles.icon} source={require('../../assets/menu-vertical.png')} />
                </View>
             </View>
+
             {/* <TabView
             renderTabBar={props =>
                <TabBar

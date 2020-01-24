@@ -66,7 +66,7 @@ const getLastMessage = (msgs, topic) => {
 }
 
 export default function List(props) {
-    // console.log(props)
+    console.log(props)
     let { messages } = props
     return (
         <ScrollView style={styles.tab}>
