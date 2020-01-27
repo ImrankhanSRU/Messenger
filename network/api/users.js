@@ -1,24 +1,21 @@
 import obj from '../../components/config'
+const axios = require('axios');
+
 
 export const authenticateUser = async (email, pwd) => {
-    const response = await fetch(obj.BASE_URL + "api/userManagement/authenticateUser", {
-        method: 'POST',
-        headers: new Headers({
-            'Content-Type': 'application/json',
-        }),
-        body: JSON.stringify({
-            "uname": email,
-            "pwd": pwd
-        })
+    const res = await axios.post(obj.BASE_URL + "api/userManagement/authenticateUser", {
+        "uname": email,
+        "pwd": pwd
     })
-    const json = await response.json()
-    return json
+
+    return res.data
+
 }
 
 
 // login = (email, pass) => {
 //     // if(obj.isConnected) {
-        
+
 //         .then((response) => response.text())
 //         .then((responseText) => {
 //             responseObj = JSON.parse(responseText)

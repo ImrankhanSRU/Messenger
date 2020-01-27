@@ -1,8 +1,9 @@
 import {
     fetchContactsPending, fetchContactsSuccess, fetchContactsError,
-    fetchGroupsSuccess, fetchGroupsError, 
+    fetchGroupsSuccess, fetchGroupsError,
     fetchPlantsSuccess, fetchPlantsError
 } from '../contactsActions';
+import axios from 'axios'
 
 
 import obj from '../../../components/config'
@@ -10,14 +11,13 @@ import obj from '../../../components/config'
 export function fetchContacts() {
     return dispatch => {
         dispatch(fetchContactsPending());
-        fetch(`${obj.BASE_URL}api/userManagement/getUserDetails`)
-            .then(res => res.json())
+        axios.get(`${obj.BASE_URL}api/userManagement/getUserDetails`)
             .then(res => {
                 if (res.error) {
                     throw (res.error);
                 }
-                dispatch(fetchContactsSuccess(res));
-                return res;
+                dispatch(fetchContactsSuccess(res.data));
+                return res.data;
             })
             .catch(error => {
                 console.log(error)
@@ -29,14 +29,13 @@ export function fetchContacts() {
 export function fetchGroups() {
     return dispatch => {
         dispatch(fetchContactsPending());
-        fetch(`${obj.BASE_URL}api/controlCenter/messenger/getAllGroupsByUser/${obj.userId}`)
-            .then(res => res.json())
+        axios.get(`${obj.BASE_URL}api/controlCenter/messenger/getAllGroupsByUser/${obj.userId}`)
             .then(res => {
                 if (res.error) {
                     throw (res.error);
                 }
-                dispatch(fetchGroupsSuccess(res));
-                return res;
+                dispatch(fetchGroupsSuccess(res.data));
+                return res.data;
             })
             .catch(error => {
                 console.log(error)
@@ -47,27 +46,24 @@ export function fetchGroups() {
 
 
 export function fetchPlants() {
-    const data = {
-        country_id_fk: [{id: 6, itemName: "India"}],
+    let data = {
+        country_id_fk: [{ id: 6, itemName: "India" }],
         stream_id_fk: "1"
     }
+    data = JSON.stringify(data)
     return dispatch => {
         dispatch(fetchContactsPending());
-        fetch(`${obj.BASE_URL}api/controlCenter/getMultiplePlants`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json; charset=utf-8'
-            },
-            body: JSON.stringify(data)
+        axios.post(`${obj.BASE_URL}api/controlCenter/getMultiplePlants`, {
+            "country_id_fk": [{ id: 6, itemName: "India" }],
+            "stream_id_fk": "1"
         }
         )
-            .then(res => res.json())
             .then(res => {
                 if (res.error) {
                     throw (res.error);
                 }
-                dispatch(fetchPlantsSuccess(res));
-                return res;
+                dispatch(fetchPlantsSuccess(res.data));
+                return res.data;
             })
             .catch(error => {
                 console.log(error)

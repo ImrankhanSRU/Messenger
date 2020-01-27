@@ -2,26 +2,22 @@ import {
     fetchMessagesPending, fetchMessagesSuccess, fetchMessagesError,
     fetchGroupMessagesPending, fetchGroupMessagesSuccess, fetchGroupMessagesError,
 } from '../messagesActions';
+import axios from 'axios'
 
 import obj from '../../../components/config'
 
 export function fetchMessages() {
     return dispatch => {
         dispatch(fetchMessagesPending());
-        fetch(`${obj.BASE_URL}api/controlCenter/messenger/getLimitedMqttMessageHistoryByTopic`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json; charset=utf-8'
-            },
-            body: JSON.stringify({mobile: obj.mobile})
+        axios.post(`${obj.BASE_URL}api/controlCenter/messenger/getLimitedMqttMessageHistoryByTopic`, {
+            mobile: obj.mobile
         })
-            .then(res => res.json())
             .then(res => {
                 if (res.error) {
                     throw (res.error);
                 }
-                dispatch(fetchMessagesSuccess(res));
-                return res;
+                dispatch(fetchMessagesSuccess(res.data));
+                return res.data;
             })
             .catch(error => {
                 console.log(error)
@@ -33,20 +29,15 @@ export function fetchMessages() {
 export function fetchGroupMessages(plants) {
     return dispatch => {
         dispatch(fetchGroupMessagesPending());
-        fetch(`${obj.BASE_URL}api/controlCenter/messenger/getGroupMessages/${obj.userId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json; charset=utf-8'
-            },
-            body: JSON.stringify({plants})
+        axios.post(`${obj.BASE_URL}api/controlCenter/messenger/getGroupMessages/${obj.userId}`, {
+            plants
         })
-            .then(res => res.json())
             .then(res => {
                 if (res.error) {
                     throw (res.error);
                 }
-                dispatch(fetchGroupMessagesSuccess(res));
-                return res;
+                dispatch(fetchGroupMessagesSuccess(res.data));
+                return res.data;
             })
             .catch(error => {
                 console.log(error)

@@ -7,6 +7,7 @@ export default StyleSheet.create({
         backgroundColor: "#e9ecef"
     },
     messageContainer: {
+        position: "relative",
         height: "80%",
         backgroundColor: "#e9ecef",
         display: "flex",
@@ -27,7 +28,7 @@ export default StyleSheet.create({
         // textAlign: "right",
         alignSelf: "flex-start",
         maxWidth: "80%",
-        borderStyle: "solid"
+        borderStyle: "solid",
 
     },
     myMessage: {
@@ -111,5 +112,31 @@ export default StyleSheet.create({
 
     groupIcon: {
         backgroundColor: "white"
-    }
+    },
+
+    borderStyle: {
+        position: "absolute",
+        left: -15,
+        width: 0,
+        height: 0,
+        // borderTopWidth: 10,
+        // borderTopColor: "transparent",
+        borderRightWidth: 20,
+        borderRightColor: "white",
+        borderBottomWidth: 20,
+        borderBottomColor: "transparent",
+        borderTopLeftRadius: 10
+    },
+
+    // down: {
+    //     // position: "absolute",
+    //     backgroundColor: "white",
+    //     width: 30,
+    //     height: 30,
+    //     padding: 5,
+    //     borderRadius: 50,
+    //     left: 100,
+    //     zIndex: 999,
+    //     top: 15,
+    // }
 })

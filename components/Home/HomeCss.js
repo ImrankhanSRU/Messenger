@@ -56,7 +56,7 @@ export default StyleSheet.create({
         borderRadius: 5,
         paddingTop: 10,
         paddingBottom: 10,
-        width: '50%'
+        width: '60%'
     },
     menuItem: {
         padding: 10,

@@ -8,6 +8,7 @@ import styles from './LoginCss'
 import OfflineNotice from '../OfflineNotice/OfflineNotice.js'
 import { authenticateUser } from '../../network/api/users'
 import obj from '../config'
+const axios = require('axios');
 
 class Login extends Component {
     request = new XMLHttpRequest();
@@ -62,7 +63,7 @@ class Login extends Component {
     }
 
     goToHome = (hCode) => {
-        let {navigation} = this.props.props
+        let { navigation } = this.props
         navigation.navigate('Home')
     }
 
@@ -83,8 +84,8 @@ class Login extends Component {
                 }
                 else {
                     obj.name = res.data.fname
-                    AsyncStorage.setItem('mess-user', 
-                    JSON.stringify({ id: res.data.id, name: res.data.fname, hCode: res.data.hcode, mobile: res.data.mobile }));
+                    AsyncStorage.setItem('mess-user',
+                        JSON.stringify({ id: res.data.id, name: res.data.fname, hCode: res.data.hcode, mobile: res.data.mobile }));
                     this.storeUserDetails(res.data)
                     this.setState({
                         showError: false,

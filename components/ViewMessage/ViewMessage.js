@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { View, Text, Image, TextInput, Keyboard } from 'react-native'
+import { View, Text, Image, TextInput, Keyboard, Button } from 'react-native'
 import styles from './ViewMessageCss'
 import obj from '../config'
 import commonStyles from '../styles'
@@ -7,11 +7,12 @@ import { TouchableOpacity } from 'react-native-gesture-handler'
 import InvertibleScrollView from 'react-native-invertible-scroll-view';
 import { connect } from 'react-redux'
 import { setRead } from '../../redux/actions/network/messagesFunctions'
+import axios from 'axios'
 
 const mqtt = require('mqtt')
 
 export default class ViewMessage extends Component {
-
+    ListView_Ref;
     options = {
         port: 9000,
         host: '52.66.213.147',
@@ -35,6 +36,7 @@ export default class ViewMessage extends Component {
             disbleButton: true,
             colors: {}
         }
+
 
     }
 
@@ -99,10 +101,9 @@ export default class ViewMessage extends Component {
     }
 
     getAllUsers = async () => {
-        const response = await fetch(`http://52.66.213.147:3000/api/userManagement/getUserDetails`)
-        const json = await response.json();
-        this.getRandomColor(json.data)
-        
+        const response = await axios.get(`http://52.66.213.147:3000/api/userManagement/getUserDetails`)
+        this.getRandomColor(response.data.data)
+
     }
 
     componentWillUnmount() {
@@ -127,9 +128,8 @@ export default class ViewMessage extends Component {
     }
 
     getGroupDetails = async (id) => {
-        const response = await fetch(`http://52.66.213.147:3000/api/controlCenter/messenger/getGroupDetails/${id}`)
-        const json = await response.json();
-        this.getRandomColor(json.data.groupMembers)
+        const response = await axios.get(`http://52.66.213.147:3000/api/controlCenter/messenger/getGroupDetails/${id}`)
+        this.getRandomColor(response.data.data.groupMembers)
     }
 
     addMessage = (newMsg) => {
@@ -207,6 +207,11 @@ export default class ViewMessage extends Component {
     }
 
     getRandomColor(groupMembers) {
+        if (groupMembers.length) {
+            groupMembers.push({
+                mobile: "BOT"
+            })
+        }
         var letters = '0123456789ABCDEF';
         var allColors = {}
         var color = '#';
@@ -241,108 +246,138 @@ export default class ViewMessage extends Component {
         }
         const name = this.props.navigation.state.params.name
         return (
-            <View style={[commonStyles.flexColumn, styles.viewMessageContainer]}
-                behavior="" enabled>
-                <View style={[commonStyles.flexRow, styles.headerTop, { backgroundColor: "darkgreen", padding: 10, alignItems: "center" }]}>
-                    <View style={{ display: "flex", flexDirection: "row", alignItems: "center" }}>
-                        <TouchableOpacity underlayColor="lightgray" onPress={() => this.props.navigation.goBack()} >
-                            <Image style={{ marginRight: 10, width: 18, height: 18 }} source={require('../../assets/back.png')} />
-                        </TouchableOpacity>
-                        <Image style={[{ width: 40, height: 40, marginRight: 10, borderRadius: 50 }]}
-                            source={iconObj[userIcon]} />
-                        <Text style={[styles.heading, { color: "white", fontSize: 20 }]}>
+            <>
+                {/* <TouchableOpacity style={styles.down}>
+                    <Image source={require('../../assets/down.png')}
+                        style={{ width: 20, height: 20 }}
+                        onPress={() => {
+                            console.log(this.ListView_Ref)
+                            this.ListView_Ref.scrollTo({ x: 0, y: 0, animated: true });
+                        }} />
+                </TouchableOpacity> */}
+                <View style={[commonStyles.flexColumn, styles.viewMessageContainer]}
+                    behavior="" enabled>
+
+                    <View style={[commonStyles.flexRow, styles.headerTop, { backgroundColor: "darkgreen", padding: 10, alignItems: "center" }]}>
+                        <View style={{ display: "flex", flexDirection: "row", alignItems: "center" }}>
+                            <TouchableOpacity underlayColor="lightgray" onPress={() => this.props.navigation.goBack()} >
+                                <Image style={{ marginRight: 10, width: 18, height: 18 }} source={require('../../assets/back.png')} />
+                            </TouchableOpacity>
+                            <Image style={[{ width: 40, height: 40, marginRight: 10, borderRadius: 50 }]}
+                                source={iconObj[userIcon]} />
+                            <Text style={[styles.heading, { color: "white", fontSize: 20 }]}>
+                                {
+                                    ((name).length > 20) ?
+                                        (((name).substring(0, 20 - 3)) + '...') :
+                                        name
+                                }
+                            </Text>
+                        </View>
+                        <View style={{ display: "flex", flexDirection: "row" }}>
+                            <Image style={[commonStyles.icon, commonStyles.mRight10]} source={require('../../assets/search.png')} />
+                            <Image style={commonStyles.icon} source={require('../../assets/menu-vertical.png')} />
+                        </View>
+                    </View>
+
+                    <View style={styles.messageContainer} >
+
+                        <InvertibleScrollView ref={(ref) => {
+                            this.ListView_Ref = ref;
+                        }} inverted contentContainerStyle={styles.messages}
+                        >
+                            {/* <View > */}
                             {
-                                ((name).length > 20) ?
-                                    (((name).substring(0, 20 - 3)) + '...') :
-                                    name
-                            }
-                        </Text>
-                    </View>
-                    <View style={{ display: "flex", flexDirection: "row" }}>
-                        <Image style={[commonStyles.icon, commonStyles.mRight10]} source={require('../../assets/search.png')} />
-                        <Image style={commonStyles.icon} source={require('../../assets/menu-vertical.png')} />
-                    </View>
-                </View>
-                <View style={styles.messageContainer}>
-                    <InvertibleScrollView inverted contentContainerStyle={styles.messages}>
-                        {/* <View > */}
-                        {
-                            days.map((date, i) => (
-                                <View style={{ marginBottom: 20 }} key={i}>
-                                    <View style={styles.date}>
-                                        <View style={styles.line}></View>
-                                        <Text style={styles.dateText}>{date}</Text>
-                                    </View>
-                                    <View>
-                                        {
-                                            messages[date].map((item, index) => (
-                                                <View key={index} style={[styles.message, commonStyles.flexRow, item.sender == obj.mobile ? styles.myMessage : null]}>
-                                                    <View style={styles.msg}>
-                                                        <View style={styles.msgText}>
-                                                            <View>
-                                                                {
-                                                                    item.sender != obj.mobile &&
-                                                                    item.sname != "NA" &&
-                                                                    topic.includes('/') &&
-                                                                    // index > 0 &&
-                                                                    // messages[date][index - 1].sname != item.sname &&
-                                                                    <Text style={{ color: this.state.colors[item.sender] }}>
-                                                                        {item.sname}
-                                                                    </Text>
-                                                                }
-                                                                <Text>
-                                                                    {item.msg}
-                                                                </Text>
+                                days.map((date, i) => (
+                                    <View style={{ marginBottom: 20 }} key={i}>
+                                        <View style={styles.date}>
+                                            <View style={styles.line}></View>
+                                            <Text style={styles.dateText}>{date}</Text>
+                                        </View>
+                                        <View>
+                                            {
+                                                messages[date].map((item, index) => (
+                                                    item.showName = item.sender != obj.mobile &&
+                                                    item.sname != "NA" &&
+                                                    topic.includes('/') &&
+                                                    (index == 0 ||
+                                                        (index > 0 &&
+                                                            messages[date][index - 1].sname != item.sname)),
+                                                    <View
+                                                        key={index}
+                                                        style={[styles.message, commonStyles.flexRow,
+                                                        item.sender == obj.mobile ? styles.myMessage : null,
+                                                        item.showName ? { borderTopLeftRadius: 0 } : null
+                                                        ]}>
+                                                        {
+                                                            item.showName &&
+                                                            <View style={styles.borderStyle}>
+
                                                             </View>
+                                                        }
+                                                        <View style={styles.msg}>
+                                                            <View style={styles.msgText}>
+                                                                <View>
+                                                                    {
+                                                                        item.showName &&
+
+                                                                        <Text style={{ color: this.state.colors[item.sender] }}>
+                                                                            {item.sname}
+                                                                        </Text>
+                                                                    }
+                                                                    <Text>
+                                                                        {item.msg}
+                                                                    </Text>
+                                                                </View>
+
+                                                                {
+                                                                    item.msg.length < 30 &&
+                                                                    <Text style={[styles.msgTime, styles.innerTime,
+                                                                    item.sender == obj.mobile || !topic.includes('/') || !item.showName ? { marginTop: 5 } : { marginTop: 25 }]}>{item.time}</Text>
+                                                                }
+                                                            </View>
+                                                            {/* <Text style={styles.msgTime}>{item.time}</Text> */}
 
                                                             {
-                                                                item.msg.length < 30 &&
-                                                                <Text style={[styles.msgTime, styles.innerTime,
-                                                                item.sender == obj.mobile || !topic.includes('/') ? { marginTop: 5 } : { marginTop: 25 }]}>{item.time}</Text>
+                                                                item.msg.length >= 30 &&
+                                                                <Text style={styles.msgTime}>
+                                                                    {item.time}
+                                                                </Text>
                                                             }
                                                         </View>
-                                                        {/* <Text style={styles.msgTime}>{item.time}</Text> */}
 
-                                                        {
-                                                            item.msg.length >= 30 &&
-                                                            <Text style={styles.msgTime}>
-                                                                {item.time}
-                                                            </Text>
-                                                        }
                                                     </View>
-
-                                                </View>
-                                            ))
-                                        }
+                                                ))
+                                            }
+                                        </View>
                                     </View>
-                                </View>
-                            ))
+                                ))
 
-                        }
-                        {/* </View> */}
-                    </InvertibleScrollView>
+                            }
+                            {/* </View> */}
+                        </InvertibleScrollView>
+
+                    </View>
+                    <View style={[commonStyles.flexRow, styles.inputContainer, { bottom: this.state.keyboardOffset }]}>
+                        <TextInput placeholder="Type a message" onSubmitEditing={Keyboard.dismiss}
+                            style={styles.input}
+                            value={this.state.msg}
+                            onChangeText={(text) => {
+                                this.handleInputChange(text)
+                            }}
+                        // style={styles.input}
+                        />
+                        <TouchableOpacity style={[styles.sendButton,
+                        !this.state.msg.length ? { backgroundColor: "lightgray" } : {}]}
+                            disabled={this.state.disbleButton}
+                            onPress={() => {
+                                this.addMessage()
+                            }} >
+                            <Image style={{ width: 30, height: 30 }} source={require('../../assets/send.png')} />
+                        </TouchableOpacity>
+                    </View>
 
                 </View>
-                <View style={[commonStyles.flexRow, styles.inputContainer, { bottom: this.state.keyboardOffset }]}>
-                    <TextInput placeholder="Type a message" onSubmitEditing={Keyboard.dismiss}
-                        style={styles.input}
-                        value={this.state.msg}
-                        onChangeText={(text) => {
-                            this.handleInputChange(text)
-                        }}
-                    // style={styles.input}
-                    />
-                    <TouchableOpacity style={[styles.sendButton,
-                    !this.state.msg.length ? { backgroundColor: "lightgray" } : {}]}
-                        disabled={this.state.disbleButton}
-                        onPress={() => {
-                            this.addMessage()
-                        }} >
-                        <Image style={{ width: 30, height: 30 }} source={require('../../assets/send.png')} />
-                    </TouchableOpacity>
-                </View>
-
-            </View>
+            </ >
         )
     }
 }

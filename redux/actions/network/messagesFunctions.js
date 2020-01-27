@@ -3,7 +3,7 @@ import {
     setReadPending, setReadError, setReadSuccess, addNewPrivateMessage, addNewGroupMessage
 } from '../viewMessageAction';
 
-// import { fet }
+import axios from 'axios'
 
 import obj from '../../../components/config'
 
@@ -11,20 +11,15 @@ import obj from '../../../components/config'
 export function fetchMessagesCount() {
     return dispatch => {
         dispatch(fetchMessagesCountPending());
-        fetch(`${obj.BASE_URL}api/controlCenter/messenger/getUnreadMessageCountByUser`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json; charset=utf-8'
-            },
-            body: JSON.stringify({ mobile: obj.mobile })
+        axios.post(`${obj.BASE_URL}api/controlCenter/messenger/getUnreadMessageCountByUser`, {
+            mobile: obj.mobile
         })
-            .then(res => res.json())
             .then(res => {
                 if (res.error) {
                     throw (res.error);
                 }
-                dispatch(fetchMessagesCountSuccess(res));
-                return res;
+                dispatch(fetchMessagesCountSuccess(res.data));
+                return res.data;
             })
             .catch(error => {
                 console.log(error)
@@ -37,14 +32,10 @@ export function fetchMessagesCount() {
 export function setRead(topic) {
     return dispatch => {
         dispatch(setReadPending());
-        fetch(`${obj.BASE_URL}api/controlCenter/messenger/makeMessageAsReadByUser`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json; charset=utf-8'
-            },
-            body: JSON.stringify({ mobile: obj.mobile, topic })
+        axios.post(`${obj.BASE_URL}api/controlCenter/messenger/makeMessageAsReadByUser`, {
+            mobile: obj.mobile,
+            topic
         })
-            .then(res => res.json())
             .then(res => {
                 if (res.error) {
                     throw (res.error);
@@ -61,7 +52,6 @@ export function setRead(topic) {
 }
 
 export function addMessage(message) {
-    console.log(message)
     return dispatch => {
         if (message.reciever.includes('/')) {
             dispatch(addNewGroupMessage(message))
