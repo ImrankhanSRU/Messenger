@@ -145,8 +145,8 @@ export default function List(props) {
                                         {
 
                                             // Object.keys(messages[0][item.topic]).length > 0 &&
-                                            ((getLastMessage(messages[0], item.topic)).length > 25) ?
-                                                (((getLastMessage(messages[0], item.topic)).substring(0, - 3)) + '...') :
+                                            ((getLastMessage(messages[0], item.topic)).length > 28) ?
+                                                (((getLastMessage(messages[0], item.topic)).substring(0, 28 - 3)) + '...') :
                                                 getLastMessage(messages[0], item.topic)
                                         }
                                     </Text>

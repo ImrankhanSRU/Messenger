@@ -73,8 +73,7 @@ class Home extends Component {
       this.props.fetchMessagesCount();
    }
 
-
-   setMessagesAsRead = (topic) => {
+   decreaseConversationCount = (topic) => {
       if (topic.includes('/')) {
          if (topic.split('/')[0] == "plants") {
             this.counts["PLANTS"]--;
@@ -86,6 +85,24 @@ class Home extends Component {
       else {
          this.counts["CONTACTS"]--;
       }
+   }
+
+   increaseConversationCount = (topic) => {
+      if (topic.includes('/')) {
+         if (topic.split('/')[0] == "plants") {
+            this.counts["PLANTS"]++;
+         }
+         else {
+            this.counts["GROUPS"]++;
+         }
+      }
+      else {
+         this.counts["CONTACTS"]++;
+      }
+   }
+
+   setMessagesAsRead = (topic) => {
+      this.decreaseConversationCount(topic)
       this.props.setRead(topic)
       this.props.fetchMessages()
       this.props.fetchGroupMessages(this.props.plants)
@@ -114,6 +131,14 @@ class Home extends Component {
       msg["fullDate"] = fullDate
       msg.time = time
       this.props.addMessage(msg)
+      if(msg.reciever.includes('/')) {
+         if(!this.props.counts[msg.reciever]) {
+            this.increaseConversationCount(msg.reciever)
+         }
+      }
+      else if(!this.props.counts[msg.sender]) {
+         this.increaseConversationCount(msg.sender)
+      }
       this.props.fetchMessagesCount()
    }
 
@@ -138,6 +163,8 @@ class Home extends Component {
       this.subscribeToTopic(obj.mobile)
       contacts.map(user => {
          user.name = `${user.fname} ${user.lname}`
+         // this.subscribeToTopic(user.topic)
+
       })
 
       groups.map(grp => {

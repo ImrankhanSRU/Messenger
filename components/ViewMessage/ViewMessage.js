@@ -59,17 +59,19 @@ export default class ViewMessage extends Component {
         })
 
 
+
         scope.client.on('message', function (topic, message) {
             // message is Buffer
             if (message != "shub") {
                 // let { messages } = { ...scope.state }
                 let time = JSON.parse(message).time
                 let msg = JSON.parse(message)
+                console.log(msg)
                 if (time.includes('/')) {
                     msg.time = scope.formatMessageTime(time)
                     // msg.fullDate = new Date().toLocaleDateString()
                 }
-                if (msg.sender != obj.mobile) {
+                if ((msg.reciever == obj.mobile && msg.sender == obj.currentTabTopic ) || msg.reciever == obj.currentTabTopic ) {
                     scope.addMessage(msg)
                 }
                 // if (messages["Today"]) {
