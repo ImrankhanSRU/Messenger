@@ -5,7 +5,7 @@ import {
 } from '../constants/constants';
 
 const initialState = {
-    pending: false,
+    pending: true,
     counts: {}
 }
 
@@ -14,7 +14,6 @@ export function viewMessageReducer(state = initialState, action) {
         case FETCH_MESSAGES_COUNT_SUCCESS:
             return {
                 ...state,
-                pending: false,
                 counts: action.counts
             }
         case FETCH_MESSAGES_COUNT_ERROR:
@@ -28,7 +27,6 @@ export function viewMessageReducer(state = initialState, action) {
         case SET_READ_MESSAGE_SUCCESS:
             return {
                 ...state,
-                pending: false,
                 counts
             }
 

@@ -65,5 +65,43 @@ export default StyleSheet.create({
         fontSize: 16,
         marginLeft: 10,
         color: "green"
-    }
+    },
+    loading: {
+        // height: "70%",
+        flex: 1,
+        // alignItems: "center",
+        justifyContent: "space-between"
+    },
+    loadingText: {
+        marginTop: 20,
+        color: "#72CE14",
+        fontSize: 25,
+        fontFamily: "Helvetica, Arial, sans-serif",
+        fontWeight: "100"
+    },
+
+    loadingDots: {
+        fontSize: 30,
+        color: "#72CE14"
+    },
+
+    labelStyle: {
+        color: "gray",
+        marginRight: 10
+    },
+    labelSelectedStyle: {
+        color: "white"
+    },
+    count: {
+        textAlign: "center",
+        backgroundColor: "white",
+        color: "darkgreen",
+        paddingLeft: 7,
+        paddingRight: 7,
+        paddingTop: 1,
+        paddingBottom: 1,
+        borderRadius: 50,
+        // minWidth: 25,
+        // minHeight: 25,
+    },
 })

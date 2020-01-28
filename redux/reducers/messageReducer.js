@@ -6,7 +6,7 @@ import {
 } from '../constants/constants';
 
 const initialState = {
-    pending: false,
+    pending: true,
     messages: [],
     groupMessages: [],
 }
@@ -17,7 +17,6 @@ export function messageReducer(state = initialState, action) {
         case FETCH_MESSAGES_SUCCESS:
             return {
                 ...state,
-                pending: false,
                 messages: action.messages
             }
         case FETCH_MESSAGES_ERROR:
@@ -41,18 +40,17 @@ export function messageReducer(state = initialState, action) {
             }
 
 
-        case FETCH_MESSAGES_COUNT_SUCCESS:
-            return {
-                ...state,
-                pending: false,
-                counts: action.counts
-            }
-        case FETCH_MESSAGES_COUNT_ERROR:
-            return {
-                ...state,
-                pending: false,
-                error: action.error
-            }
+        // case FETCH_MESSAGES_COUNT_SUCCESS:
+        //     return {
+        //         ...state,
+        //         counts: action.counts
+        //     }
+        // case FETCH_MESSAGES_COUNT_ERROR:
+        //     return {
+        //         ...state,
+        //         pending: false,
+        //         error: action.error
+        //     }
 
         case ADD_PRIVATE_MESSAGE_SUCCESS:
             let messages = { ...state.messages }

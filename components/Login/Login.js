@@ -63,7 +63,7 @@ class Login extends Component {
     }
 
     goToHome = (hCode) => {
-        let { navigation } = this.props
+        let { navigation } = this.props.props
         navigation.navigate('Home')
     }
 

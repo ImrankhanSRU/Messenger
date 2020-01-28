@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { View, Text, Image, TextInput, Dimensions, TouchableHighlight, TouchableWithoutFeedback, TouchableOpacity } from 'react-native'
+import { Animated, View, Text, Image, TextInput, Dimensions, TouchableHighlight, TouchableWithoutFeedback, TouchableOpacity } from 'react-native'
 import styles from './HomeCss'
 import { TabView, SceneMap, TabBar } from 'react-native-tab-view';
 import { fetchContacts, fetchGroups, fetchPlants } from "../../redux/actions/network/fetch";
@@ -10,7 +10,10 @@ import { connect } from 'react-redux'
 import List from '../List/List'
 import commonStyles from '../styles'
 import obj from '../config';
+import Footer from '../Footer/Footer';
 // import Sound from 'react-native-sound';
+import AnimatedEllipsis from 'react-native-animated-ellipsis';
+
 
 var Sound = require('react-native-sound')
 
@@ -20,6 +23,11 @@ Sound.setCategory('Playback');
 const mqtt = require('mqtt')
 
 class Home extends Component {
+   counts = {
+      'CONTACTS': 0,
+      'GROUPS': 0,
+      'PLANTS': 0
+   }
 
    options = {
       port: 9000,
@@ -48,12 +56,13 @@ class Home extends Component {
          // message is Buffer
          if (message != "shub") {
             let msg = JSON.parse(message)
-
-            if (msg.sender != obj.mobile) {
+            console.log(msg)
+            if (msg.sender != obj.mobile && (msg.reciever == obj.mobile || msg.reciever.includes('/'))) {
                scope.hello.play()
             }
 
-            if (msg.reciever != obj.currentTabTopic && msg.sender != obj.currentTabTopic) {
+            if ((msg.reciever != obj.currentTabTopic && msg.sender != obj.currentTabTopic) &&
+               (msg.reciever == obj.mobile || msg.reciever.includes('/'))) {
                scope.addNewMessage(msg)
             }
          }
@@ -67,6 +76,17 @@ class Home extends Component {
 
 
    setMessagesAsRead = (topic) => {
+      if (topic.includes('/')) {
+         if (topic.split('/')[0] == "plants") {
+            this.counts["PLANTS"]--;
+         }
+         else {
+            this.counts["GROUPS"]--;
+         }
+      }
+      else {
+         this.counts["CONTACTS"]--;
+      }
       this.props.setRead(topic)
       this.props.fetchMessages()
       this.props.fetchGroupMessages(this.props.plants)
@@ -101,6 +121,12 @@ class Home extends Component {
    componentDidUpdate() {
       if (this.props.plants && !this.props.groupMessages.length) {
          this.props.fetchGroupMessages(this.props.plants)
+      }
+      if (Object.keys(this.props.counts).length) {
+         let keys = Object.keys(this.props.counts)
+         this.counts["CONTACTS"] = keys.filter(item => !item.includes('/')).length
+         this.counts["PLANTS"] = keys.filter(item => item.split('/')[0] == "plants").length
+         this.counts["GROUPS"] = keys.filter(item => item.includes('/') && item.split('/')[0] != "plants").length
       }
    }
 
@@ -141,14 +167,10 @@ class Home extends Component {
       showMenu: false
    };
 
+
+
    renderScene = ({ route, jumpTo }) => {
 
-      // let messages = []
-      // console.log(this.props.groupMessages)
-      // if (this.props.messages.length && this.props.groupMessages.length) {
-      //    messages = [{ ...this.props.messages[0], ...this.props.groupMessages[0] }]
-      // }
-      // if (messages.length) {
       switch (route.key) {
          case 'contacts':
             return <List
@@ -183,7 +205,6 @@ class Home extends Component {
          default:
             return null;
       }
-      // }
    };
 
    toggleMenu = () => {
@@ -203,75 +224,90 @@ class Home extends Component {
       this.props.navigation.navigate("Login")
    }
 
-   render() {
-      return (
-         <>
-            {
-               this.state.showMenu &&
 
-               <View style={[styles.userMenu]}>
-                  <View style={styles.menuItem}>
+   render() {
+
+      return (
+         this.props.pending ?
+            <View style={styles.loading}>
+               <View style={commonStyles.flexColumn, { justifyContent: "center", alignItems: "center", height: "50%" }}>
+                  <Image source={require('../../assets/nova-icon.png')} />
+                  <Text style={styles.loadingText}>Messenger</Text>
+                  <AnimatedEllipsis animationDelay={100} style={styles.loadingDots} />
+               </View>
+               <Footer />
+            </View> :
+            <>
+               {
+                  this.state.showMenu &&
+
+                  <View style={[styles.userMenu]}>
+                     <View style={styles.menuItem}>
+                        <View style={{ display: "flex", flexDirection: "row" }}>
+                           <Text style={{ fontSize: 16 }}>
+                              Welcome
+                        </Text>
+                           <Text style={styles.userName}>
+                              {obj.name}
+                           </Text>
+                        </View>
+                     </View>
+                     <TouchableHighlight underlayColor="lightgray" onPress={() => { this.logout() }} style={styles.menuItem}>
+                        <Text style={{ fontSize: 16 }}>Logout</Text>
+                     </TouchableHighlight >
+                  </View>
+               }
+               <TouchableWithoutFeedback
+                  onPress={() => { this.handleOutside() }}>
+                  <View style={[commonStyles.flexRow, styles.headerTop, { backgroundColor: "darkgreen" }]}>
+                     <Text style={styles.heading}>Messenger</Text>
                      <View style={{ display: "flex", flexDirection: "row" }}>
-                        <Text style={{ fontSize: 16 }}>
-                           Welcome
-                        </Text>
-                        <Text style={styles.userName}>
-                           {obj.name}
-                        </Text>
+                        <Image style={[commonStyles.icon, commonStyles.mRight10]} source={require('../../assets/search.png')} />
+                        <TouchableOpacity onPress={() => {
+                           this.toggleMenu()
+                        }} >
+                           <Image style={commonStyles.icon} source={require('../../assets/menu-vertical.png')} />
+                        </TouchableOpacity>
                      </View>
                   </View>
-                  <TouchableHighlight underlayColor="lightgray" onPress={() => { this.logout() }} style={styles.menuItem}>
-                     <Text style={{ fontSize: 16 }}>Logout</Text>
-                  </TouchableHighlight >
-               </View>
-            }
-            <TouchableWithoutFeedback
-               onPress={() => { this.handleOutside() }}>
-               <View style={[commonStyles.flexRow, styles.headerTop, { backgroundColor: "darkgreen" }]}>
-                  <Text style={styles.heading}>Messenger</Text>
-                  <View style={{ display: "flex", flexDirection: "row" }}>
-                     <Image style={[commonStyles.icon, commonStyles.mRight10]} source={require('../../assets/search.png')} />
-                     <TouchableOpacity onPress={() => {
-                        this.toggleMenu()
-                     }} >
-                        <Image style={commonStyles.icon} source={require('../../assets/menu-vertical.png')} />
-                     </TouchableOpacity>
-                  </View>
-               </View>
-            </TouchableWithoutFeedback>
+               </TouchableWithoutFeedback>
 
+               <TabView
 
-            {/* <TabView
-            renderTabBar={props =>
-               <TabBar
-                  {...props}
-                  indicatorStyle={{ backgroundColor: 'white' }}
-                  style={{ backgroundColor: '#06D755' }}
+                  renderTabBar={props =>
+                     <TabBar
+                        {...props}
+                        indicatorStyle={{ backgroundColor: 'white' }}
+                        style={{ backgroundColor: 'darkgreen' }}
+                        renderLabel={({ route, focused, color }) => (
+                           <View style={commonStyles.flexRow}>
+                              <Text style={[
+                                 styles.labelStyle,
+                                 focused ? styles.labelSelectedStyle : null,
+                              ]}>
+                                 {route.title}
+                              </Text>
+                              {
+                                 this.counts[route.title] > 0 &&
+                                 <Text style={styles.count}>
+                                    {this.counts[route.title]}
+                                 </Text>
+                              }
+                           </View>
+                        )}
+
+                     />
+                  }
+                  navigationState={this.state}
+                  renderScene={this.renderScene}
+                  onIndexChange={index => { this.handleOutside(), this.setState({ index }) }}
+                  initialLayout={this.initialLayout}
+                  style={{ backgroundColor: 'white', color: 'black' }}
+                  tabStyle={{ backgroundColor: 'white' }}
+                  indicatorStyle={{ backgroundColor: 'black' }}
                />
-            }
-            navigationState={{ index, routes }}
-            renderScene={renderScene}
-            onIndexChange={setIndex}
-            initialLayout={initialLayout}
-         >
-         </TabView> */}
-            <TabView
-               renderTabBar={props =>
-                  <TabBar
-                     {...props}
-                     indicatorStyle={{ backgroundColor: 'white' }}
-                     style={{ backgroundColor: 'darkgreen' }}
-                  />
-               }
-               navigationState={this.state}
-               renderScene={this.renderScene}
-               onIndexChange={index => { console.log(index); this.handleOutside(), this.setState({ index }) }}
-               initialLayout={this.initialLayout}
-               style={{ backgroundColor: 'white', color: 'black' }}
-               tabStyle={{ backgroundColor: 'white' }}
-               indicatorStyle={{ backgroundColor: 'black' }}
-            />
-         </>
+
+            </>
       )
    }
 }
@@ -283,7 +319,8 @@ const mapStateToProps = state => ({
    plants: state.data.plants,
    messages: state.messages.messages,
    groupMessages: state.messages.groupMessages,
-   counts: state.view.counts
+   counts: state.view.counts,
+   pending: state.messages.pending
 });
 
 const mapDispatchToProps = dispatch => ({

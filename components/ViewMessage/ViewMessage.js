@@ -43,16 +43,15 @@ export default class ViewMessage extends Component {
     componentDidMount() {
         this.getRandomColor(5)
         let { topic } = this.props.navigation.state.params
-        if (topic.includes('/')) {
-            if (topic.includes('plant')) {
-                this.getAllUsers()
-            }
-            else {
-                let groupId = topic.split('/')[1]
-                this.getGroupDetails(groupId)
-            }
-
+        if (topic.split('/')[0] == "plants") {
+            this.getAllUsers()
         }
+        else if (topic.includes('/')) {
+            let groupId = topic.split('/')[1]
+            this.getGroupDetails(groupId)
+        }
+
+
 
         obj.currentTabTopic = topic
         let scope = this
@@ -66,6 +65,7 @@ export default class ViewMessage extends Component {
                 // let { messages } = { ...scope.state }
                 let time = JSON.parse(message).time
                 let msg = JSON.parse(message)
+                console.log(msg)
                 if (time.includes('/')) {
                     msg.time = scope.formatMessageTime(time)
                     // msg.fullDate = new Date().toLocaleDateString()

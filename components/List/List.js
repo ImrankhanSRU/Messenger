@@ -26,14 +26,16 @@ const getLastMessageTime = (messages, topic) => {
             allKeys = Object.keys(messages[topic])
             lastKey = allKeys[0]
             if (messages[topic][lastKey]) {
-                let date = messages[topic][lastKey][messages[topic][lastKey].length - 1].fullDate
-                if (date == formatDate(new Date())) {
+                let fullDate = messages[topic][lastKey][messages[topic][lastKey].length - 1].fullDate
+                let date;
+                let time = messages[topic][lastKey][messages[topic][lastKey].length - 1].time
+                if (fullDate == formatDate(new Date())) {
                     date = messages[topic][lastKey][messages[topic][lastKey].length - 1].time
                 }
-                else if (date == formatDate(new Date(new Date().setDate(new Date().getDate() - 1)))) {
+                else if (fullDate == formatDate(new Date(new Date().setDate(new Date().getDate() - 1)))) {
                     date = "YesterDay"
                 }
-                return date
+                return [date, fullDate, time]
             }
         }
     }
@@ -69,15 +71,63 @@ const getLastMessage = (msgs, topic) => {
 }
 
 
+const sortByLatest = (props) => {
+    let { data, messages } = props
+    data.map(item => {
+        if (getLastMessageTime(messages[0], item.topic).length) {
+            let dates = getLastMessageTime(messages[0], item.topic)
+            item.lastMsgTime = dates[0] ? dates[0] : dates[1]
+            item.time = dates[2]
+        }
+        else {
+            item.lastMsgTime = ''
+        }
+    })
+    return data.sort(sort)
+    // return data
+}
 
-  
+const sort = (a, b) => {
+    if (a.lastMsgTime.includes("M") && b.lastMsgTime.includes("M")) {
+        if (new Date("1/1/2020 " + a.time) > new Date("1/1/2020 " + b.time)) {
+            return -1;
+        }
+        else {
+            return 1;
+        }
+    }
+
+    else if (a.lastMsgTime.includes("M")) {
+        return -1;
+    }
+    else if (b.lastMsgTime.includes("M")) {
+        return 1;
+    }
+    else if (a.lastMsgTime == b.lastMsgTime) {
+        if (new Date("1/1/2020 " + a.time) > new Date("1/1/2020 " + b.time)) {
+            return -1;
+        }
+        else {
+            return 1;
+        }
+    }
+    else if (a.lastMsgTime > b.lastMsgTime) {
+        return -1;
+    }
+    else {
+        return 1;
+    }
+}
+
 
 export default function List(props) {
     let { messages } = props
+    let contacts = sortByLatest(props)
+
     return (
         <ScrollView style={styles.tab}>
             {
-                props.data.map((item, index) => (
+                contacts.map((item, index) => (
                     (item.mobile || item.gname || item.itemName) && (item.mobile != obj.mobile) &&
                     <TouchableHighlight underlayColor="lightgray" key={index}
                         onPress={() => { filterMessages(props.messages, item, props.navigation, props.setRead, props.handleOutside) }}>
@@ -95,8 +145,8 @@ export default function List(props) {
                                         {
 
                                             // Object.keys(messages[0][item.topic]).length > 0 &&
-                                            ((getLastMessage(messages[0], item.topic)).length > 30) ?
-                                                (((getLastMessage(messages[0], item.topic)).substring(0, 30 - 3)) + '...') :
+                                            ((getLastMessage(messages[0], item.topic)).length > 25) ?
+                                                (((getLastMessage(messages[0], item.topic)).substring(0, - 3)) + '...') :
                                                 getLastMessage(messages[0], item.topic)
                                         }
                                     </Text>
@@ -104,7 +154,8 @@ export default function List(props) {
                                 <View style={styles.indicator}>
                                     <Text
                                         style={[styles.lastMsgDate, props.counts[item.topic] && styles.unseen]}>
-                                        {getLastMessageTime(props.messages[0], item.topic)}
+                                        {item.lastMsgTime}
+                                        {/* {getLastMessageTime(props.messages[0], item.topic)} */}
                                     </Text>
                                     {
                                         props.counts[item.topic] &&

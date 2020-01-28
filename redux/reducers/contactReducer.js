@@ -2,7 +2,7 @@ import {FETCH_CONTACTS_PENDING, FETCH_CONTACTS_SUCCESS, FETCH_CONTACTS_ERROR,
 FETCH_GROUPS_SUCCESS, FETCH_GROUPS_ERROR, FETCH_PLANTS_SUCCESS, FETCH_PLANTS_ERROR } from '../constants/constants';
 
 const initialState = {
-    pending: false,
+    pending: true,
     contacts: [],
     groups: [],
     plants: [],
@@ -15,7 +15,6 @@ export function contactsReducer(state = initialState, action) {
         case FETCH_CONTACTS_SUCCESS:
             return {
                 ...state,
-                pending: false,
                 contacts: action.contacts
             }
         case FETCH_CONTACTS_ERROR:
@@ -28,7 +27,6 @@ export function contactsReducer(state = initialState, action) {
             case FETCH_GROUPS_SUCCESS:
             return {
                 ...state,
-                pending: false,
                 groups: action.groups
             }
         case FETCH_GROUPS_ERROR:
@@ -41,7 +39,6 @@ export function contactsReducer(state = initialState, action) {
             case FETCH_PLANTS_SUCCESS:
             return {
                 ...state,
-                pending: false,
                 plants: action.plants
             }
         case FETCH_PLANTS_ERROR:
