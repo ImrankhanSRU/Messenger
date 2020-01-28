@@ -56,7 +56,6 @@ class Home extends Component {
          // message is Buffer
          if (message != "shub") {
             let msg = JSON.parse(message)
-            console.log(msg)
             if (msg.sender != obj.mobile && (msg.reciever == obj.mobile || msg.reciever.includes('/'))) {
                scope.hello.play()
             }
@@ -136,9 +135,9 @@ class Home extends Component {
 
    getSnapshotBeforeUpdate() {
       let { contacts, groups, plants } = this.props
+      this.subscribeToTopic(obj.mobile)
       contacts.map(user => {
          user.name = `${user.fname} ${user.lname}`
-         this.subscribeToTopic(user.topic)
       })
 
       groups.map(grp => {
