@@ -1,12 +1,10 @@
 import React, { Component } from 'react'
-import { View, Text, Image, TextInput, Keyboard, Button } from 'react-native'
+import { View, Text, Image, TextInput, Keyboard, KeyboardAvoidingView } from 'react-native'
 import styles from './ViewMessageCss'
 import obj from '../config'
 import commonStyles from '../styles'
 import { TouchableOpacity } from 'react-native-gesture-handler'
 import InvertibleScrollView from 'react-native-invertible-scroll-view';
-import { connect } from 'react-redux'
-import { setRead } from '../../redux/actions/network/messagesFunctions'
 import axios from 'axios'
 
 const mqtt = require('mqtt')
@@ -34,7 +32,8 @@ export default class ViewMessage extends Component {
             msg: '',
             keyboardOffset: 0,
             disbleButton: true,
-            colors: {}
+            colors: {},
+            height: 0
         }
 
 
@@ -66,12 +65,11 @@ export default class ViewMessage extends Component {
                 // let { messages } = { ...scope.state }
                 let time = JSON.parse(message).time
                 let msg = JSON.parse(message)
-                console.log(msg)
                 if (time.includes('/')) {
                     msg.time = scope.formatMessageTime(time)
                     // msg.fullDate = new Date().toLocaleDateString()
                 }
-                if ((msg.reciever == obj.mobile && msg.sender == obj.currentTabTopic ) || msg.reciever == obj.currentTabTopic ) {
+                if ((msg.reciever == obj.mobile && msg.sender == obj.currentTabTopic) || msg.reciever == obj.currentTabTopic) {
                     scope.addMessage(msg)
                 }
                 // if (messages["Today"]) {
@@ -117,8 +115,9 @@ export default class ViewMessage extends Component {
     }
 
     _keyboardDidShow = (event) => {
+        console.log(event)
         this.setState({
-            keyboardOffset: "11%",
+            keyboardOffset: "10%"
         })
     }
 
@@ -256,8 +255,9 @@ export default class ViewMessage extends Component {
                             this.ListView_Ref.scrollTo({ x: 0, y: 0, animated: true });
                         }} />
                 </TouchableOpacity> */}
-                <View style={[commonStyles.flexColumn, styles.viewMessageContainer]}
-                    behavior="" enabled>
+                <View
+                    behavior={null} keyboardVerticalOffset={0}
+                    style={[commonStyles.flexColumn, styles.viewMessageContainer]} >
 
                     <View style={[commonStyles.flexRow, styles.headerTop, { backgroundColor: "darkgreen", padding: 10, alignItems: "center" }]}>
                         <View style={{ display: "flex", flexDirection: "row", alignItems: "center" }}>
@@ -297,9 +297,9 @@ export default class ViewMessage extends Component {
                                         <View>
                                             {
                                                 messages[date].map((item, index) => (
-                                                    item.showName = item.sender != obj.mobile &&
+                                                    item.showName = true &&
                                                     item.sname != "NA" &&
-                                                    topic.includes('/') &&
+                                                    // topic.includes('/') &&
                                                     (index == 0 ||
                                                         (index > 0 &&
                                                             messages[date][index - 1].sname != item.sname)),
@@ -311,7 +311,9 @@ export default class ViewMessage extends Component {
                                                         ]}>
                                                         {
                                                             item.showName &&
-                                                            <View style={styles.borderStyle}>
+                                                            <View style={[
+                                                                item.sender == obj.mobile ?
+                                                                    styles.myMessageBorderStyle : styles.borderStyle]}>
 
                                                             </View>
                                                         }
@@ -319,7 +321,8 @@ export default class ViewMessage extends Component {
                                                             <View style={styles.msgText}>
                                                                 <View>
                                                                     {
-                                                                        item.showName &&
+                                                                        item.showName && item.reciever.includes('/') &&
+                                                                        item.sender != obj.mobile &&
 
                                                                         <Text style={{ color: this.state.colors[item.sender] }}>
                                                                             {item.sname}
@@ -331,7 +334,7 @@ export default class ViewMessage extends Component {
                                                                 </View>
 
                                                                 {
-                                                                    item.msg.length < 30 &&
+                                                                    item.msg.length < 33 &&
                                                                     <Text style={[styles.msgTime, styles.innerTime,
                                                                     item.sender == obj.mobile || !topic.includes('/') || !item.showName ? { marginTop: 5 } : { marginTop: 25 }]}>{item.time}</Text>
                                                                 }
@@ -339,7 +342,7 @@ export default class ViewMessage extends Component {
                                                             {/* <Text style={styles.msgTime}>{item.time}</Text> */}
 
                                                             {
-                                                                item.msg.length >= 30 &&
+                                                                item.msg.length >= 33 &&
                                                                 <Text style={styles.msgTime}>
                                                                     {item.time}
                                                                 </Text>
@@ -358,14 +361,17 @@ export default class ViewMessage extends Component {
                         </InvertibleScrollView>
 
                     </View>
-                    <View style={[commonStyles.flexRow, styles.inputContainer, { bottom: this.state.keyboardOffset }]}>
-                        <TextInput placeholder="Type a message" onSubmitEditing={Keyboard.dismiss}
+                    <View style={[commonStyles.flexRow, styles.inputContainer]}
+
+                        bottom={this.state.keyboardOffset}>
+                        <TextInput placeholder="Type a message"
+                            value={this.state.messageText}
+
                             style={styles.input}
                             value={this.state.msg}
                             onChangeText={(text) => {
                                 this.handleInputChange(text)
                             }}
-                        // style={styles.input}
                         />
                         <TouchableOpacity style={[styles.sendButton,
                         !this.state.msg.length ? { backgroundColor: "lightgray" } : {}]}

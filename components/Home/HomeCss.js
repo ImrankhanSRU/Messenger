@@ -104,4 +104,9 @@ export default StyleSheet.create({
         // minWidth: 25,
         // minHeight: 25,
     },
+
+    search: {
+        padding: 15,
+        fontSize: 17
+    }
 })

@@ -140,7 +140,23 @@ export default function List(props) {
                             </View>
                             <View style={[commonStyles.flexRow, styles.nameContainer]}>
                                 <View>
-                                    <Text style={styles.name}>{item.name}</Text>
+                                    {
+                                        !!props.searchText.length &&
+                                        <Text style={styles.name}>
+
+                                            <Text style={{ backgroundColor: "yellow" }}>
+                                                {item.name.substr(0, props.searchText.length)}
+                                            </Text>
+                                            {item.name.substr(props.searchText.length)}
+                                        </Text>
+                                    }
+                                    {
+                                        !props.searchText.length && 
+                                        <Text style={styles.name}>
+                                            {item.name}
+                                        </Text>
+                                    }
+                                    
                                     <Text style={{ color: "gray" }}>
                                         {
 

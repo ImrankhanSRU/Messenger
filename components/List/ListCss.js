@@ -56,6 +56,6 @@ export default StyleSheet.create({
     userIcon: {
         width: 40,
         height: 40,
-        marginRight: 20
+        marginRight: 10
     }
 })

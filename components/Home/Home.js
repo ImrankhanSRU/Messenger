@@ -1,5 +1,8 @@
 import React, { Component } from 'react'
-import { Animated, View, Text, Image, TextInput, Dimensions, TouchableHighlight, TouchableWithoutFeedback, TouchableOpacity } from 'react-native'
+import {
+   Animated, View, Text, Image, TextInput, Dimensions, TouchableHighlight,
+   TouchableWithoutFeedback, TouchableOpacity
+} from 'react-native'
 import styles from './HomeCss'
 import { TabView, SceneMap, TabBar } from 'react-native-tab-view';
 import { fetchContacts, fetchGroups, fetchPlants } from "../../redux/actions/network/fetch";
@@ -131,12 +134,12 @@ class Home extends Component {
       msg["fullDate"] = fullDate
       msg.time = time
       this.props.addMessage(msg)
-      if(msg.reciever.includes('/')) {
-         if(!this.props.counts[msg.reciever]) {
+      if (msg.reciever.includes('/')) {
+         if (!this.props.counts[msg.reciever]) {
             this.increaseConversationCount(msg.reciever)
          }
       }
-      else if(!this.props.counts[msg.sender]) {
+      else if (!this.props.counts[msg.sender]) {
          this.increaseConversationCount(msg.sender)
       }
       this.props.fetchMessagesCount()
@@ -190,42 +193,54 @@ class Home extends Component {
          { key: 'plants', title: 'PLANTS' }
 
       ],
-      showMenu: false
+      showMenu: false,
+      showSearch: false,
+      searchText: ''
    };
 
 
 
    renderScene = ({ route, jumpTo }) => {
+      let contacts = this.props.contacts
+      let groups = this.props.groups
+      let plants = this.props.plants
+      if (this.state.searchText) {
+         contacts = contacts.filter(item => item.name.toLowerCase().startsWith(this.state.searchText.toLowerCase()))
+         groups = groups.filter(item => item.name.toLowerCase().startsWith(this.state.searchText.toLowerCase()))
+         plants = plants.filter(item => item.name.toLowerCase().startsWith(this.state.searchText.toLowerCase()))
 
+      }
       switch (route.key) {
          case 'contacts':
             return <List
-               data={this.props.contacts}
+               data={contacts}
                messages={this.props.messages}
                navigation={this.props.navigation}
                counts={this.props.counts}
                setRead={this.setMessagesAsRead}
                handleOutside={this.handleOutside}
+               searchText = {this.state.searchText}
             />;
          case 'groups':
             return <List
-               data={this.props.groups}
+               data={groups}
                messages={this.props.groupMessages}
                navigation={this.props.navigation}
                counts={this.props.counts}
                setRead={this.setMessagesAsRead}
                handleOutside={this.handleOutside}
-
+               searchText = {this.state.searchText}
 
             />;
          case 'plants':
             return <List
-               data={this.props.plants}
+               data={plants}
                messages={this.props.groupMessages}
                navigation={this.props.navigation}
                counts={this.props.counts}
                setRead={this.setMessagesAsRead}
                handleOutside={this.handleOutside}
+               searchText = {this.state.searchText}
 
             />;
          default:
@@ -241,7 +256,7 @@ class Home extends Component {
 
    handleOutside = () => {
       this.setState({
-         showMenu: false
+         showMenu: false,
       })
    }
 
@@ -250,9 +265,25 @@ class Home extends Component {
       this.props.navigation.navigate("Login")
    }
 
+   showSearch = () => {
+      this.setState({
+         showSearch: true
+      })
+   }
+
+   handleSearch = (text) => {
+      this.setState({
+         searchText: text
+      })
+   }
+
+   handleIndexChange = (index) => {
+      this.handleOutside(),
+         this.setState({ index })
+   }
+
 
    render() {
-
       return (
          this.props.pending ?
             <View style={styles.loading}>
@@ -283,55 +314,86 @@ class Home extends Component {
                      </TouchableHighlight >
                   </View>
                }
-               <TouchableWithoutFeedback
-                  onPress={() => { this.handleOutside() }}>
-                  <View style={[commonStyles.flexRow, styles.headerTop, { backgroundColor: "darkgreen" }]}>
-                     <Text style={styles.heading}>Messenger</Text>
-                     <View style={{ display: "flex", flexDirection: "row" }}>
-                        <Image style={[commonStyles.icon, commonStyles.mRight10]} source={require('../../assets/search.png')} />
-                        <TouchableOpacity onPress={() => {
-                           this.toggleMenu()
-                        }} >
-                           <Image style={commonStyles.icon} source={require('../../assets/menu-vertical.png')} />
-                        </TouchableOpacity>
-                     </View>
-                  </View>
-               </TouchableWithoutFeedback>
 
-               <TabView
-
-                  renderTabBar={props =>
-                     <TabBar
-                        {...props}
-                        indicatorStyle={{ backgroundColor: 'white' }}
-                        style={{ backgroundColor: 'darkgreen' }}
-                        renderLabel={({ route, focused, color }) => (
-                           <View style={commonStyles.flexRow}>
-                              <Text style={[
-                                 styles.labelStyle,
-                                 focused ? styles.labelSelectedStyle : null,
-                              ]}>
-                                 {route.title}
-                              </Text>
-                              {
-                                 this.counts[route.title] > 0 &&
-                                 <Text style={styles.count}>
-                                    {this.counts[route.title]}
-                                 </Text>
-                              }
-                           </View>
-                        )}
-
+               {
+                  this.state.showSearch &&
+                  <View style={[commonStyles.flexRow, { justifyContent: "flex-start", alignItems: "center" }]}>
+                     <TouchableOpacity
+                        onPress={() => {
+                           this.setState({
+                              showSearch: false,
+                              searchText: ''
+                           })
+                        }}
+                     >
+                        <Image style={{ width: 20, height: 20, marginRight: 10, marginLeft: 5 }} source={require('../../assets/back-green.png')} />
+                     </TouchableOpacity>
+                     <TextInput
+                        style={styles.search}
+                        autoFocus={true}
+                        value={this.state.searchText}
+                        onChangeText={(text) => { this.handleSearch(text) }}
+                        placeholder="Search..."
                      />
-                  }
-                  navigationState={this.state}
-                  renderScene={this.renderScene}
-                  onIndexChange={index => { this.handleOutside(), this.setState({ index }) }}
-                  initialLayout={this.initialLayout}
-                  style={{ backgroundColor: 'white', color: 'black' }}
-                  tabStyle={{ backgroundColor: 'white' }}
-                  indicatorStyle={{ backgroundColor: 'black' }}
-               />
+                  </View>
+               }
+
+               {
+                  !this.state.showSearch &&
+                  <TouchableWithoutFeedback
+                     onPress={() => { this.handleOutside() }}>
+                     <View style={[commonStyles.flexRow, styles.headerTop, { backgroundColor: "darkgreen" }]}>
+                        <Text style={styles.heading}>Messenger</Text>
+                        <View style={{ display: "flex", flexDirection: "row" }}>
+                           <TouchableOpacity onPress={this.showSearch} >
+                              <Image style={[commonStyles.icon, commonStyles.mRight10, { width: 30, height: 30 }]} source={require('../../assets/search.png')} />
+                           </TouchableOpacity>
+                           <TouchableOpacity onPress={() => {
+                              this.toggleMenu()
+                           }} >
+                              <Image style={[commonStyles.icon, { height: 30 }]} source={require('../../assets/menu-vertical.png')} />
+                           </TouchableOpacity>
+                        </View>
+                     </View>
+                  </TouchableWithoutFeedback>
+               }
+               {
+                  <TabView
+
+                     renderTabBar={props =>
+                        // !this.state.showSearch &&
+                        <TabBar
+                           {...props}
+                           indicatorStyle={{ backgroundColor: 'white' }}
+                           style={{ backgroundColor: 'darkgreen' }}
+                           renderLabel={({ route, focused, color }) => (
+                              <View style={commonStyles.flexRow}>
+                                 <Text style={[
+                                    styles.labelStyle,
+                                    focused ? styles.labelSelectedStyle : null,
+                                 ]}>
+                                    {route.title}
+                                 </Text>
+                                 {
+                                    this.counts[route.title] > 0 &&
+                                    <Text style={styles.count}>
+                                       {this.counts[route.title]}
+                                    </Text>
+                                 }
+                              </View>
+                           )}
+
+                        />
+                     }
+                     navigationState={this.state}
+                     renderScene={this.renderScene}
+                     onIndexChange={index => { this.handleIndexChange(index) }}
+                     initialLayout={this.initialLayout}
+                     style={{ backgroundColor: 'white', color: 'black' }}
+                     tabStyle={{ backgroundColor: 'white' }}
+                     indicatorStyle={{ backgroundColor: 'black' }}
+                  />
+               }
 
             </>
       )

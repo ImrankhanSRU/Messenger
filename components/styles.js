@@ -6,7 +6,7 @@ export default StyleSheet.create({
     flexRow: {
         display: "flex",
         justifyContent: "space-between",
-        flexDirection: "row"
+        flexDirection: "row",
     },
     flexColumn: {
         flexDirection: "column"

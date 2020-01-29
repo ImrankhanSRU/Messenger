@@ -27,7 +27,7 @@ export default StyleSheet.create({
         backgroundColor: "white",
         // textAlign: "right",
         alignSelf: "flex-start",
-        maxWidth: "80%",
+        maxWidth: "85%",
         borderStyle: "solid",
 
     },
@@ -53,6 +53,7 @@ export default StyleSheet.create({
         // paddingBottom: 7,
         width: "85%",
         fontSize: 17,
+
     },
 
     sendButton: {
@@ -82,7 +83,7 @@ export default StyleSheet.create({
         textAlign: "right"
     },
     innerTime: {
-        marginLeft: 15,
+        marginLeft: 10,
     },
     date: {
         display: "flex",
@@ -127,6 +128,16 @@ export default StyleSheet.create({
         borderBottomColor: "transparent",
         borderTopLeftRadius: 10
     },
+
+    myMessageBorderStyle : {
+        position: "absolute",
+        right: -10,
+        borderLeftWidth: 20,
+        borderLeftColor: "#dcf8c6",
+        borderBottomWidth: 20,
+        borderBottomColor: "transparent",
+        borderTopLeftRadius: 10
+    }
 
     // down: {
     //     // position: "absolute",
