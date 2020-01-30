@@ -5,6 +5,7 @@ import Main from './components/Main/Main'
 import Login from './components/Login/Login'
 import List from './components/List/List'
 import ViewMessage from './components/ViewMessage/ViewMessage'
+import Thread from './components/Thread/Thread'
 
 const MainNavigator = createStackNavigator({
 
@@ -34,6 +35,13 @@ const MainNavigator = createStackNavigator({
   },
   ViewMessage: {
     screen: ViewMessage,
+    navigationOptions: {
+      headerShown: false
+    }
+  },
+
+  Thread: {
+    screen: Thread,
     navigationOptions: {
       headerShown: false
     }

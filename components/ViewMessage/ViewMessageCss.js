@@ -117,7 +117,7 @@ export default StyleSheet.create({
 
     borderStyle: {
         position: "absolute",
-        left: -15,
+        left: -20,
         width: 0,
         height: 0,
         // borderTopWidth: 10,
@@ -126,28 +126,32 @@ export default StyleSheet.create({
         borderRightColor: "white",
         borderBottomWidth: 20,
         borderBottomColor: "transparent",
-        borderTopLeftRadius: 10
+        borderTopLeftRadius: 10,
     },
 
-    myMessageBorderStyle : {
+    myMessageBorderStyle: {
         position: "absolute",
-        right: -10,
+        width: 0,
+        height: 0,
+        right: -20,
         borderLeftWidth: 20,
         borderLeftColor: "#dcf8c6",
         borderBottomWidth: 20,
         borderBottomColor: "transparent",
-        borderTopLeftRadius: 10
-    }
+        borderTopRightRadius: 10
+    },
 
-    // down: {
-    //     // position: "absolute",
-    //     backgroundColor: "white",
-    //     width: 30,
-    //     height: 30,
-    //     padding: 5,
-    //     borderRadius: 50,
-    //     left: 100,
-    //     zIndex: 999,
-    //     top: 15,
-    // }
+    messageReply: {
+        alignSelf: "flex-start",
+        marginTop: 5,
+    },
+    myMessageReply: {
+        alignSelf: "flex-end",
+    },
+    replyText: {
+        padding: 2,
+        fontSize: 16,
+        textAlign: "right",
+        color: "dodgerblue",
+    }
 })

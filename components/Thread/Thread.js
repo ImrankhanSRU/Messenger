@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
-import { View, Text, Image, TextInput, Keyboard, KeyboardAvoidingView, Button, Animated } from 'react-native'
-import styles from './ViewMessageCss'
+import { View, Text, Image, TextInput, Keyboard } from 'react-native'
+import styles from '../ViewMessage/ViewMessageCss'
 import obj from '../config'
 import commonStyles from '../styles'
 import { TouchableOpacity } from 'react-native-gesture-handler'
@@ -10,7 +10,7 @@ import Swipeable from 'react-native-gesture-handler/Swipeable';
 
 const mqtt = require('mqtt')
 
-export default class Thread extends Component {
+export default class ViewMessage extends Component {
     messageRef = React.createRef();
 
     options = {
@@ -30,7 +30,7 @@ export default class Thread extends Component {
     constructor(props) {
         super(props)
         this.state = {
-            messages: props.navigation.state.params.messages,
+            messages: props.navigation.state.params.messages.replies,
             msg: '',
             keyboardOffset: 0,
             disbleButton: true,
@@ -56,26 +56,26 @@ export default class Thread extends Component {
 
         obj.currentTabTopic = topic
         let scope = this
-        this.client.on('connect', function () {
-        })
+        // this.client.on('connect', function () {
+        // })
 
 
 
-        scope.client.on('message', function (topic, message) {
-            // message is Buffer
-            if (message != "shub") {
-                let time = JSON.parse(message).time
-                let msg = JSON.parse(message)
-                if (time.includes('/')) {
-                    msg.time = scope.formatMessageTime(time)
-                    // msg.fullDate = new Date().toLocaleDateString()
-                }
-                if ((msg.reciever == obj.mobile && msg.sender == obj.currentTabTopic) || msg.reciever == obj.currentTabTopic) {
-                    scope.addMessage(msg)
-                }
+        // scope.client.on('message', function (topic, message) {
+        //     // message is Buffer
+        //     if (message != "shub") {
+        //         let time = JSON.parse(message).time
+        //         let msg = JSON.parse(message)
+        //         if (time.includes('/')) {
+        //             msg.time = scope.formatMessageTime(time)
+        //             // msg.fullDate = new Date().toLocaleDateString()
+        //         }
+        //         if ((msg.reciever == obj.mobile && msg.sender == obj.currentTabTopic) || msg.reciever == obj.currentTabTopic) {
+        //             scope.addMessage(msg)
+        //         }
 
-            }
-        })
+        //     }
+        // })
 
         if (topic.includes('/')) {
             this.subscribeToTopic(topic)
@@ -102,12 +102,11 @@ export default class Thread extends Component {
         let { topic } = this.props.navigation.state.params
         this.keyboardDidShowListener.remove();
         this.keyboardDidHideListener.remove();
-        this.props.navigation.state.params.setRead(topic)
+        // this.props.navigation.state.params.setRead(topic)
         this.client.end()
     }
 
     _keyboardDidShow = (event) => {
-        console.log(event)
         this.setState({
             keyboardOffset: "10%"
         })
@@ -222,42 +221,12 @@ export default class Thread extends Component {
 
     getRandomArbitrary = (min, max) => Math.random() * (max - min) + min
 
-    renderLeftActions = (progress, dragX) => {
-        const trans = dragX.interpolate({
-            inputRange: [0, 50, 100, 101],
-            outputRange: [-20, 0, 0, 1],
-        });
-        return (
-            <Button title="Archieve" style={styles.leftAction} onPress={this.close}>
-                <Animated.Text
-                    style={[
-                        styles.actionText,
-                        {
-                            transform: [{ translateX: trans }],
-                        },
-                    ]}>
-                </Animated.Text>
-            </Button>
-        );
-    };
 
-    goToThread = async (item) => {
-        const messages = await axios.get(`http://52.66.213.147:3000/api/controlCenter/messenger/getReplyMessages/${item.id}`)
-
-        // console.log(messages.data.data.replies)
-
-
-        this.props.navigation.navigate("Thread", {
-            messages: messages.data.data, name: "Thread", topic: item.reciever,
-            userIcon: "contact"
-        })
-
-    }
 
     render() {
 
-
         let { messages } = this.state
+        let mainThread = this.props.navigation.state.params.messages
         let disbleButton = this.state.disbleButton
         let { userIcon, topic } = this.props.navigation.state.params
         let iconObj = {
@@ -265,22 +234,14 @@ export default class Thread extends Component {
             group: require('../../assets/groups.png'),
             plant: require('../../assets/plant.png')
         }
-        let days = Object.keys(messages)
-        if (days.includes("Today") && days.indexOf("Today") > 0) {
-            days.pop()
-            days.splice(0, 0, "Today")
-        }
+
         const name = this.props.navigation.state.params.name
+        // return (
+        //     <Text>Thread</Text>
+        // )
         return (
             <>
-                {/* <TouchableOpacity style={styles.down}>
-                    <Image source={require('../../assets/down.png')}
-                        style={{ width: 20, height: 20 }}
-                        onPress={() => {
-                            console.log(this.ListView_Ref)
-                            this.ListView_Ref.scrollTo({ x: 0, y: 0, animated: true });
-                        }} />
-                </TouchableOpacity> */}
+
                 <View
                     behavior={null} keyboardVerticalOffset={0}
                     style={[commonStyles.flexColumn, styles.viewMessageContainer]} >
@@ -309,106 +270,83 @@ export default class Thread extends Component {
                     <View style={styles.messageContainer} >
 
                         <InvertibleScrollView ref={(ref) => {
-                            this.ListView_Ref = ref;
                         }} inverted contentContainerStyle={styles.messages}
                         >
-                            {/* <View > */}
-                            {
-                                days.map((date, i) => (
-                                    <View style={{ marginBottom: 20 }} key={i}>
-                                        <View style={styles.date}>
-                                            <View style={styles.line}></View>
-                                            <Text style={styles.dateText}>{date}</Text>
-                                        </View>
-                                        <View>
-                                            {
-                                                messages[date].map((item, index) => (
-                                                    item.showName = true &&
-                                                    item.sname != "NA" &&
-                                                    // topic.includes('/') &&
-                                                    (index == 0 ||
-                                                        (index > 0 &&
-                                                            messages[date][index - 1].sname != item.sname)),
-                                                    <View >
 
-                                                        <View
-                                                            key={index}
-                                                            style={[styles.message, commonStyles.flexRow,
-                                                            item.sender == obj.mobile ? styles.myMessage : null,
-                                                            item.showName ? { borderTopLeftRadius: 0 } : null,
-                                                            item.showName && item.sender == obj.mobile ?
-                                                                { borderTopRightRadius: 0 } : null
-                                                            ]}>
-                                                            {/* <Swipeable
-                                                                renderLeftActions={this.renderLeftActions}> */}
+                            <View>
+                                {
+                                    messages.map((item, index) => (
+                                        item.showName = true &&
+                                        item.sname != "NA" &&
+                                        topic.includes('/') &&
+                                        (index == 0 ||
+                                            (index > 0 &&
+                                                messages[index - 1].sname != item.sname)),
+                                        <View >
+
+                                            <View
+                                                key={index}
+                                                style={[styles.message, commonStyles.flexRow,
+                                                item.sender == obj.mobile ? styles.myMessage : null,
+                                                item.showName ? { borderTopLeftRadius: 0 } : null,
+                                                item.showName && item.sender == obj.mobile ?
+                                                    { borderTopRightRadius: 0 } : null
+                                                ]}>
+
+                                                {
+                                                    item.showName &&
+                                                    <View style={[
+                                                        item.sender == obj.mobile ?
+                                                            styles.myMessageBorderStyle : styles.borderStyle]}>
+
+                                                    </View>
+                                                }
+                                                <View style={styles.msg}>
+                                                    <View style={styles.msgText}>
+                                                        <View>
                                                             {
                                                                 item.showName &&
-                                                                <View style={[
-                                                                    item.sender == obj.mobile ?
-                                                                        styles.myMessageBorderStyle : styles.borderStyle]}>
+                                                                item.reciever.includes('/') &&
+                                                                item.sender != obj.mobile &&
 
-                                                                </View>
+                                                                <Text style={{ color: this.state.colors[item.sender] }}>
+                                                                    {item.sname}
+                                                                </Text>
                                                             }
-                                                            <View style={styles.msg}>
-                                                                <View style={styles.msgText}>
-                                                                    <View>
-                                                                        {
-                                                                            item.showName && item.reciever.includes('/') &&
-                                                                            item.sender != obj.mobile &&
-
-                                                                            <Text style={{ color: this.state.colors[item.sender] }}>
-                                                                                {item.sname}
-                                                                            </Text>
-                                                                        }
-                                                                        <Text>
-                                                                            {item.msg}
-                                                                        </Text>
-                                                                    </View>
-
-                                                                    {
-                                                                        item.msg.length < 33 &&
-                                                                        <Text style={[styles.msgTime, styles.innerTime,
-                                                                        item.sender == obj.mobile || !topic.includes('/') || !item.showName ? { marginTop: 5 } : { marginTop: 25 }]}>{item.time}</Text>
-                                                                    }
-                                                                </View>
-                                                                {/* <Text style={styles.msgTime}>{item.time}</Text> */}
-
-                                                                {
-                                                                    item.msg.length >= 33 &&
-                                                                    <Text style={styles.msgTime}>
-                                                                        {item.time}
-                                                                    </Text>
-                                                                }
-                                                            </View>
-                                                            {/* </Swipeable> */}
-
-                                                        </View>
-                                                        {
-                                                            item.replyCount &&
-                                                            <TouchableOpacity
-                                                                onPress={() => {
-                                                                    this.goToThread(item)
-                                                                }}
-                                                                key={index + 1}
-                                                                style={[
-                                                                    item.replyCount ?
-                                                                        styles.messageReply : null,
-                                                                    item.sender == obj.mobile ? styles.myMessageReply : null
-                                                                ]}>
-                                                                <Text style={styles.replyText}>
-                                                                    {item.replyCount} replies
+                                                            <Text>
+                                                                {item.msg}
                                                             </Text>
-                                                            </TouchableOpacity>
+                                                        </View>
+
+                                                        {
+                                                            item.msg.length < 33 &&
+                                                            <Text style={[styles.msgTime, styles.innerTime,
+                                                            item.sender == obj.mobile || !topic.includes('/') || !item.showName ? { marginTop: 5 } : { marginTop: 25 }]}>{item.time}</Text>
                                                         }
                                                     </View>
-                                                ))
-                                            }
-                                        </View>
-                                    </View>
-                                ))
 
-                            }
-                            {/* </View> */}
+                                                    {
+                                                        item.msg.length >= 33 &&
+                                                        <Text style={styles.msgTime}>
+                                                            {item.time}
+                                                        </Text>
+                                                    }
+                                                </View>
+
+                                            </View>
+
+                                        </View>
+                                    ))
+                                }
+                            </View>
+                            <View style={{ alignItems: "center", marginBottom: 20, backgroundColor: "white", borderRadius: 5, padding: 3 }}>
+                                <Text style={{ color: "darkgreen" }}>
+                                    {mainThread.sname}
+                                </Text>
+                                <Text>
+                                    {mainThread.mainThread}
+                                </Text>
+                            </View>
                         </InvertibleScrollView>
 
                     </View>
