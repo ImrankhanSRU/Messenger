@@ -64,8 +64,18 @@ const getLastMessage = (msgs, topic) => {
         }
     }
     if (firstKey.length) {
-        let lastMsg = msgs[topic][firstKey[0]][msgs[topic][firstKey[0]].length - 1].msg
-        return lastMsg
+        let lastMsg = msgs[topic][firstKey[0]][msgs[topic][firstKey[0]].length - 1]
+        let name;
+
+        if (lastMsg.sender == obj.mobile) {
+            name = "You"
+        }
+        else {
+            name = lastMsg.sname
+        }
+
+        return `${name}: ${lastMsg.msg}`
+
     }
     return ''
 }
@@ -151,18 +161,18 @@ export default function List(props) {
                                         </Text>
                                     }
                                     {
-                                        !props.searchText.length && 
+                                        !props.searchText.length &&
                                         <Text style={styles.name}>
                                             {item.name}
                                         </Text>
                                     }
-                                    
-                                    <Text style={{ color: "gray" }}>
+
+                                    <Text style={{ color: "gray", fontSize: 14 }}>
                                         {
 
                                             // Object.keys(messages[0][item.topic]).length > 0 &&
-                                            ((getLastMessage(messages[0], item.topic)).length > 28) ?
-                                                (((getLastMessage(messages[0], item.topic)).substring(0, 28 - 3)) + '...') :
+                                            ((getLastMessage(messages[0], item.topic)).length > 30) ?
+                                                (((getLastMessage(messages[0], item.topic)).substring(0, 30 - 3)) + '...') :
                                                 getLastMessage(messages[0], item.topic)
                                         }
                                     </Text>

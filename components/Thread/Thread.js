@@ -31,18 +31,18 @@ export default class ViewMessage extends Component {
         super(props)
         this.state = {
             messages: props.navigation.state.params.messages.replies,
+            replyId: props.navigation.state.params.messages.id,
             msg: '',
             keyboardOffset: 0,
             disbleButton: true,
             colors: {},
-            height: 0
+            topic: this.props.navigation.state.params.topic
         }
 
 
     }
 
     componentDidMount() {
-        // console.log(this.props.navigation.navigate("Login"))
         let { topic } = this.props.navigation.state.params
         if (topic.split('/')[0] == "plants") {
             this.getAllUsers()
@@ -56,31 +56,29 @@ export default class ViewMessage extends Component {
 
         obj.currentTabTopic = topic
         let scope = this
-        // this.client.on('connect', function () {
-        // })
+        this.client.on('connect', function () {
+        })
 
 
 
-        // scope.client.on('message', function (topic, message) {
-        //     // message is Buffer
-        //     if (message != "shub") {
-        //         let time = JSON.parse(message).time
-        //         let msg = JSON.parse(message)
-        //         if (time.includes('/')) {
-        //             msg.time = scope.formatMessageTime(time)
-        //             // msg.fullDate = new Date().toLocaleDateString()
-        //         }
-        //         if ((msg.reciever == obj.mobile && msg.sender == obj.currentTabTopic) || msg.reciever == obj.currentTabTopic) {
-        //             scope.addMessage(msg)
-        //         }
+        scope.client.on('message', function (topic, message) {
+            // message is Buffer
+            if (message != "shub") {
+                let time = JSON.parse(message).time
+                let msg = JSON.parse(message)
+                // if (time.includes('/')) {
+                //     msg.time = scope.formatMessageTime(time)
+                //     // msg.fullDate = new Date().toLocaleDateString()
+                // }
+                if ((msg.reciever == obj.mobile && msg.sender == obj.currentTabTopic) || msg.reciever == obj.currentTabTopic) {
+                    scope.addMessage(msg)
+                }
 
-        //     }
-        // })
+            }
+        })
 
-        if (topic.includes('/')) {
-            this.subscribeToTopic(topic)
-        }
-        this.subscribeToTopic(obj.mobile)
+        // this.subscribeToTopic(topic)
+
         this.keyboardDidShowListener = Keyboard.addListener(
             'keyboardDidShow',
             this._keyboardDidShow,
@@ -98,17 +96,17 @@ export default class ViewMessage extends Component {
     }
 
     componentWillUnmount() {
-        obj.currentTabTopic = ''
+        // obj.currentTabTopic = ''
         let { topic } = this.props.navigation.state.params
         this.keyboardDidShowListener.remove();
         this.keyboardDidHideListener.remove();
-        // this.props.navigation.state.params.setRead(topic)
+        this.props.navigation.state.params.setRead(topic)
         this.client.end()
     }
 
     _keyboardDidShow = (event) => {
         this.setState({
-            keyboardOffset: "10%"
+            keyboardOffset: "8%"
         })
     }
 
@@ -148,34 +146,31 @@ export default class ViewMessage extends Component {
             month = `0${month}`
         }
         let fullDate = `${day}/${month}/${year}`
-        let messages = { ...this.state.messages }
+        let messages = [...this.state.messages]
         let msgObj = {
             sender: obj.mobile,
             reciever: obj.currentTabTopic,
-            fullDate,
+            date: fullDate,
             sname: obj.name,
-            time
+            time,
+            reply_to_msg_id: this.state.replyId
         }
         if (newMsg) {
             msgObj = newMsg
-            msgObj.fullDate = fullDate
+            msgObj.date = fullDate
         }
         else {
             msgObj["msg"] = this.state.msg
             sendMsg = 1;
         }
-        if (messages["Today"]) {
-            messages["Today"].push(msgObj)
-        }
-        else {
-            messages["Today"] = [msgObj]
-        }
+        messages.push(msgObj)
         this.setState({
             messages,
             msg: ''
         })
-        if (sendMsg)
+        if (sendMsg) {
             this.client.publish(obj.currentTabTopic, JSON.stringify(msgObj), false)
+        }
 
     }
 
@@ -221,6 +216,19 @@ export default class ViewMessage extends Component {
 
     getRandomArbitrary = (min, max) => Math.random() * (max - min) + min
 
+    formatDate = (date) => {
+        var d = new Date(date),
+            month = '' + (d.getMonth() + 1),
+            day = '' + d.getDate(),
+            year = d.getFullYear().toString().substr(-2);
+
+        if (month.length < 2)
+            month = '0' + month;
+        if (day.length < 2)
+            day = '0' + day;
+
+        return [day, month, year].join('/');
+    }
 
 
     render() {
@@ -236,9 +244,6 @@ export default class ViewMessage extends Component {
         }
 
         const name = this.props.navigation.state.params.name
-        // return (
-        //     <Text>Thread</Text>
-        // )
         return (
             <>
 
@@ -253,13 +258,16 @@ export default class ViewMessage extends Component {
                             </TouchableOpacity>
                             <Image style={[{ width: 40, height: 40, marginRight: 10, borderRadius: 50 }]}
                                 source={iconObj[userIcon]} />
-                            <Text style={[styles.heading, { color: "white", fontSize: 20 }]}>
-                                {
-                                    ((name).length > 20) ?
-                                        (((name).substring(0, 20 - 3)) + '...') :
-                                        name
-                                }
-                            </Text>
+                            <View>
+                                <Text style={[styles.heading, { color: "white", fontSize: 20 }]}>
+                                    {
+                                        ((name).length > 25) ?
+                                            (((name).substring(0, 25 - 3)) + '...') :
+                                            name
+                                    }
+                                </Text>
+                                {/* <Text style={{ color: "white" }}>You, deepak & 3 others</Text> */}
+                            </View>
                         </View>
                         <View style={{ display: "flex", flexDirection: "row" }}>
                             <Image style={[commonStyles.icon, commonStyles.mRight10]} source={require('../../assets/search.png')} />
@@ -278,26 +286,30 @@ export default class ViewMessage extends Component {
                                     messages.map((item, index) => (
                                         item.showName = true &&
                                         item.sname != "NA" &&
-                                        topic.includes('/') &&
+                                        // topic.includes('/') &&
                                         (index == 0 ||
                                             (index > 0 &&
                                                 messages[index - 1].sname != item.sname)),
-                                        <View >
-
+                                        <View key={index} style={{
+                                            backgroundColor: "", padding: 25,
+                                            paddingBottom: 0
+                                        }} >
                                             <View
-                                                key={index}
+                                                // key={index}
                                                 style={[styles.message, commonStyles.flexRow,
                                                 item.sender == obj.mobile ? styles.myMessage : null,
                                                 item.showName ? { borderTopLeftRadius: 0 } : null,
                                                 item.showName && item.sender == obj.mobile ?
-                                                    { borderTopRightRadius: 0 } : null
+                                                    { borderTopRightRadius: 0 } : null,
                                                 ]}>
 
                                                 {
                                                     item.showName &&
                                                     <View style={[
                                                         item.sender == obj.mobile ?
-                                                            styles.myMessageBorderStyle : styles.borderStyle]}>
+                                                            styles.myMessageBorderStyle : styles.borderStyle,
+                                                        { top: 0 }
+                                                    ]}>
 
                                                     </View>
                                                 }
@@ -321,32 +333,69 @@ export default class ViewMessage extends Component {
                                                         {
                                                             item.msg.length < 33 &&
                                                             <Text style={[styles.msgTime, styles.innerTime,
-                                                            item.sender == obj.mobile || !topic.includes('/') || !item.showName ? { marginTop: 5 } : { marginTop: 25 }]}>{item.time}</Text>
+                                                            item.sender == obj.mobile || !topic.includes('/') ||
+                                                                !item.showName ? { marginTop: 5 } : { marginTop: 25 }]}>
+
+                                                                {!item.date.includes('/') ?
+                                                                    this.formatDate(item.date)
+                                                                    : item.date
+                                                                }
+                                                            </Text>
                                                         }
                                                     </View>
 
                                                     {
                                                         item.msg.length >= 33 &&
                                                         <Text style={styles.msgTime}>
-                                                            {item.time}
+                                                            {this.formatDate(item.date)}
                                                         </Text>
                                                     }
                                                 </View>
 
                                             </View>
-
                                         </View>
                                     ))
                                 }
                             </View>
-                            <View style={{ alignItems: "center", marginBottom: 20, backgroundColor: "white", borderRadius: 5, padding: 3 }}>
-                                <Text style={{ color: "darkgreen" }}>
+                            <View style={{
+                                marginBottom: 20,
+                                backgroundColor: "white",
+                                borderRadius: 5,
+                                padding: 10,
+                                maxWidth: "100%",
+                                marginLeft: "auto",
+                                marginRight: "auto"
+                            }}>
+                                <Text style={{ color: "darkgreen", fontSize: 17 }}>
                                     {mainThread.sname}
                                 </Text>
-                                <Text>
-                                    {mainThread.mainThread}
-                                </Text>
+
+                                <View style={[commonStyles.flexRow]}>
+                                    <View>
+                                        <Text style={{ fontSize: 17 }}>
+                                            {mainThread.mainThread}
+                                        </Text>
+
+                                    </View>
+                                    {
+                                        mainThread.mainThread.length < 33 &&
+                                        <Text style={[styles.msgTime, styles.innerTime,
+                                        mainThread.sender == obj.mobile || !mainThread.receiver.includes('/') ||
+                                            !mainThread.showName ? { marginTop: 5 } : { marginTop: 25 }]}>
+                                            {this.formatDate(mainThread.date)}
+                                        </Text>
+                                    }
+
+                                    {
+                                        mainThread.mainThread.length >= 33 &&
+                                        <Text style={styles.msgTime}>
+                                            {this.formatDate(mainThread.date)}
+                                        </Text>
+                                    }
+                                </View>
+
                             </View>
+                            {/* </View> */}
                         </InvertibleScrollView>
 
                     </View>

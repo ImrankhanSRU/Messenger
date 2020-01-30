@@ -12,10 +12,12 @@ export default StyleSheet.create({
         backgroundColor: "#e9ecef",
         display: "flex",
         flexDirection: "row",
-        alignItems: "flex-end"
+        alignItems: "flex-end",
+        paddingTop: 20,
     },
     messages: {
-        padding: 25,
+        // padding: 25,
+        // paddingTop: 25,
         zIndex: -1,
     },
     message: {
@@ -23,7 +25,7 @@ export default StyleSheet.create({
         paddingLeft: 10,
         paddingRight: 10,
         borderRadius: 5,
-        marginTop: 10,
+        // marginTop: 10,
         backgroundColor: "white",
         // textAlign: "right",
         alignSelf: "flex-start",
@@ -118,6 +120,7 @@ export default StyleSheet.create({
     borderStyle: {
         position: "absolute",
         left: -20,
+        top: 0,
         width: 0,
         height: 0,
         // borderTopWidth: 10,
@@ -131,6 +134,7 @@ export default StyleSheet.create({
 
     myMessageBorderStyle: {
         position: "absolute",
+        top: 0,
         width: 0,
         height: 0,
         right: -20,
@@ -143,15 +147,23 @@ export default StyleSheet.create({
 
     messageReply: {
         alignSelf: "flex-start",
-        marginTop: 5,
+        // textAlign: "left",
+        // width: 100,
+        marginTop: -10,
+        marginLeft: 25
     },
     myMessageReply: {
         alignSelf: "flex-end",
+        marginRight: 25
     },
     replyText: {
         padding: 2,
         fontSize: 16,
         textAlign: "right",
         color: "dodgerblue",
+        // backgroundColor: "white"
+    },
+    leftAction: {
+        position: "absolute",
     }
 })

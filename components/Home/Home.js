@@ -26,11 +26,7 @@ Sound.setCategory('Playback');
 const mqtt = require('mqtt')
 
 class Home extends Component {
-   counts = {
-      'CONTACTS': 0,
-      'GROUPS': 0,
-      'PLANTS': 0
-   }
+
 
    options = {
       port: 9000,
@@ -65,7 +61,12 @@ class Home extends Component {
 
             if ((msg.reciever != obj.currentTabTopic && msg.sender != obj.currentTabTopic) &&
                (msg.reciever == obj.mobile || msg.reciever.includes('/'))) {
-               scope.addNewMessage(msg)
+               if (msg.reply_to_msg_id) {
+                  scope.addNewMessage(msg, true)
+               }
+               else {
+                  scope.addNewMessage(msg)
+               }
             }
          }
       })
@@ -77,31 +78,42 @@ class Home extends Component {
    }
 
    decreaseConversationCount = (topic) => {
+      let counts = { ...this.state.counts }
+
       if (topic.includes('/')) {
+
          if (topic.split('/')[0] == "plants") {
-            this.counts["PLANTS"]--;
+            counts["PLANTS"]--;
          }
          else {
-            this.counts["GROUPS"]--;
+            counts["GROUPS"]--;
          }
       }
       else {
-         this.counts["CONTACTS"]--;
+         counts["CONTACTS"]--;
       }
+      this.setState({
+         counts
+      })
    }
 
    increaseConversationCount = (topic) => {
+      let counts = { ...this.state.counts }
+
       if (topic.includes('/')) {
          if (topic.split('/')[0] == "plants") {
-            this.counts["PLANTS"]++;
+            counts["PLANTS"]++;
          }
          else {
-            this.counts["GROUPS"]++;
+            counts["GROUPS"]++;
          }
       }
       else {
-         this.counts["CONTACTS"]++;
+         counts["CONTACTS"]++;
       }
+      this.setState({
+         counts
+      })
    }
 
    setMessagesAsRead = (topic) => {
@@ -111,29 +123,31 @@ class Home extends Component {
       this.props.fetchGroupMessages(this.props.plants)
    }
 
-   addNewMessage = (msg) => {
-      let date = new Date()
-      let year = date.getFullYear() % 100
-      let day = date.getDate()
-      let month = date.getMonth() + 1
-      let hours = date.getHours()
-      let minutes = date.getMinutes()
-      let type = "AM"
-      if (hours > 12) {
-         hours -= 12
-         type = "PM"
+   addNewMessage = (msg, isThread) => {
+      if (!isThread) {
+         let date = new Date()
+         let year = date.getFullYear() % 100
+         let day = date.getDate()
+         let month = date.getMonth() + 1
+         let hours = date.getHours()
+         let minutes = date.getMinutes()
+         let type = "AM"
+         if (hours > 12) {
+            hours -= 12
+            type = "PM"
+         }
+         let time = `${hours}:${minutes} ${type}`
+         if (day < 10) {
+            day = `0${day}`
+         }
+         if (month < 10) {
+            month = `0${month}`
+         }
+         let fullDate = `${day}/${month}/${year}`
+         msg["fullDate"] = fullDate
+         msg.time = time
+         this.props.addMessage(msg)
       }
-      let time = `${hours}:${minutes} ${type}`
-      if (day < 10) {
-         day = `0${day}`
-      }
-      if (month < 10) {
-         month = `0${month}`
-      }
-      let fullDate = `${day}/${month}/${year}`
-      msg["fullDate"] = fullDate
-      msg.time = time
-      this.props.addMessage(msg)
       if (msg.reciever.includes('/')) {
          if (!this.props.counts[msg.reciever]) {
             this.increaseConversationCount(msg.reciever)
@@ -151,9 +165,15 @@ class Home extends Component {
       }
       if (Object.keys(this.props.counts).length) {
          let keys = Object.keys(this.props.counts)
-         this.counts["CONTACTS"] = keys.filter(item => !item.includes('/')).length
-         this.counts["PLANTS"] = keys.filter(item => item.split('/')[0] == "plants").length
-         this.counts["GROUPS"] = keys.filter(item => item.includes('/') && item.split('/')[0] != "plants").length
+         let counts = { ...this.state.counts }
+         if (!Object.keys(counts).length) {
+            counts["CONTACTS"] = keys.filter(item => !item.includes('/')).length
+            counts["PLANTS"] = keys.filter(item => item.split('/')[0] == "plants").length
+            counts["GROUPS"] = keys.filter(item => item.includes('/') && item.split('/')[0] != "plants").length
+            this.setState({
+               counts
+            })
+         }
       }
    }
 
@@ -195,7 +215,8 @@ class Home extends Component {
       ],
       showMenu: false,
       showSearch: false,
-      searchText: ''
+      searchText: '',
+      counts: {}
    };
 
 
@@ -219,7 +240,7 @@ class Home extends Component {
                counts={this.props.counts}
                setRead={this.setMessagesAsRead}
                handleOutside={this.handleOutside}
-               searchText = {this.state.searchText}
+               searchText={this.state.searchText}
             />;
          case 'groups':
             return <List
@@ -229,7 +250,7 @@ class Home extends Component {
                counts={this.props.counts}
                setRead={this.setMessagesAsRead}
                handleOutside={this.handleOutside}
-               searchText = {this.state.searchText}
+               searchText={this.state.searchText}
 
             />;
          case 'plants':
@@ -240,7 +261,7 @@ class Home extends Component {
                counts={this.props.counts}
                setRead={this.setMessagesAsRead}
                handleOutside={this.handleOutside}
-               searchText = {this.state.searchText}
+               searchText={this.state.searchText}
 
             />;
          default:
@@ -375,9 +396,9 @@ class Home extends Component {
                                     {route.title}
                                  </Text>
                                  {
-                                    this.counts[route.title] > 0 &&
+                                    this.state.counts[route.title] > 0 &&
                                     <Text style={styles.count}>
-                                       {this.counts[route.title]}
+                                       {this.state.counts[route.title]}
                                     </Text>
                                  }
                               </View>

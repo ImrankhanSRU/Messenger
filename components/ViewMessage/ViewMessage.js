@@ -3,10 +3,11 @@ import { View, Text, Image, TextInput, Keyboard, KeyboardAvoidingView, Button, A
 import styles from './ViewMessageCss'
 import obj from '../config'
 import commonStyles from '../styles'
-import { TouchableOpacity } from 'react-native-gesture-handler'
+import { TouchableOpacity, TouchableHighlight } from 'react-native-gesture-handler'
 import InvertibleScrollView from 'react-native-invertible-scroll-view';
 import axios from 'axios'
 import Swipeable from 'react-native-gesture-handler/Swipeable';
+import GestureRecognizer, { swipeDirections } from 'react-native-swipe-gestures';
 
 const mqtt = require('mqtt')
 
@@ -35,7 +36,8 @@ export default class Thread extends Component {
             keyboardOffset: 0,
             disbleButton: true,
             colors: {},
-            height: 0
+            height: 0,
+            showThreadAlert: false
         }
 
 
@@ -66,12 +68,18 @@ export default class Thread extends Component {
             if (message != "shub") {
                 let time = JSON.parse(message).time
                 let msg = JSON.parse(message)
-                if (time.includes('/')) {
+                if (time.includes('/') && !msg.reply_to_msg_id) {
                     msg.time = scope.formatMessageTime(time)
                     // msg.fullDate = new Date().toLocaleDateString()
                 }
-                if ((msg.reciever == obj.mobile && msg.sender == obj.currentTabTopic) || msg.reciever == obj.currentTabTopic) {
-                    scope.addMessage(msg)
+                if ((msg.reciever == obj.mobile && msg.sender == obj.currentTabTopic) ||
+                    (msg.reciever == obj.currentTabTopic)) {
+                    if (msg.reply_to_msg_id) {
+                        scope.addMessage(msg, true)
+                    }
+                    else {
+                        scope.addMessage(msg)
+                    }
                 }
 
             }
@@ -107,7 +115,6 @@ export default class Thread extends Component {
     }
 
     _keyboardDidShow = (event) => {
-        console.log(event)
         this.setState({
             keyboardOffset: "10%"
         })
@@ -124,60 +131,84 @@ export default class Thread extends Component {
         this.getRandomColor(response.data.data.groupMembers)
     }
 
-    addMessage = (newMsg) => {
+    addMessage = (newMsg, isThread) => {
+        if (!isThread) {
+            let sendMsg = 0;
+            let date = new Date()
+            let year = date.getFullYear() % 100
+            let day = date.getDate()
+            let month = date.getMonth() + 1
+            let hours = date.getHours()
+            let minutes = date.getMinutes()
+            let type = "AM"
+            if (hours > 12) {
+                hours -= 12
+                type = "PM"
+            }
+            if (minutes < 10) {
+                minutes = `0${minutes}`
+            }
+            let time = `${hours}:${minutes} ${type}`
+            if (day < 10) {
+                day = `0${day}`
+            }
+            if (month < 10) {
+                month = `0${month}`
+            }
+            let fullDate = `${day}/${month}/${year}`
+            let messages = { ...this.state.messages }
+            let msgObj = {
+                sender: obj.mobile,
+                reciever: obj.currentTabTopic,
+                fullDate,
+                sname: obj.name,
+                time
+            }
+            if (newMsg) {
+                msgObj = newMsg
+                msgObj.fullDate = fullDate
+            }
+            else {
+                msgObj["msg"] = this.state.msg
+                sendMsg = 1;
+            }
+            if (messages["Today"]) {
+                messages["Today"].push(msgObj)
+            }
+            else {
+                messages["Today"] = [msgObj]
+            }
+            this.setState({
+                messages,
+                msg: ''
+            })
+            if (sendMsg)
+                this.client.publish(obj.currentTabTopic, JSON.stringify(msgObj), false)
+        }
+        else {
+            this.increaseReplyCount(newMsg)
+        }
 
-        let sendMsg = 0;
-        let date = new Date()
-        let year = date.getFullYear() % 100
-        let day = date.getDate()
-        let month = date.getMonth() + 1
-        let hours = date.getHours()
-        let minutes = date.getMinutes()
-        let type = "AM"
-        if (hours > 12) {
-            hours -= 12
-            type = "PM"
-        }
-        if (minutes < 10) {
-            minutes = `0${minutes}`
-        }
-        let time = `${hours}:${minutes} ${type}`
-        if (day < 10) {
-            day = `0${day}`
-        }
-        if (month < 10) {
-            month = `0${month}`
-        }
-        let fullDate = `${day}/${month}/${year}`
+    }
+
+    increaseReplyCount = (newMsg) => {
         let messages = { ...this.state.messages }
-        let msgObj = {
-            sender: obj.mobile,
-            reciever: obj.currentTabTopic,
-            fullDate,
-            sname: obj.name,
-            time
-        }
-        if (newMsg) {
-            msgObj = newMsg
-            msgObj.fullDate = fullDate
-        }
-        else {
-            msgObj["msg"] = this.state.msg
-            sendMsg = 1;
-        }
-        if (messages["Today"]) {
-            messages["Today"].push(msgObj)
-        }
-        else {
-            messages["Today"] = [msgObj]
-        }
-        this.setState({
-            messages,
-            msg: ''
+        let days = Object.keys(messages)
+        days.map(day => {
+            messages[day].map(msg => {
+                if (msg.id == newMsg.reply_to_msg_id) {
+                    if (msg.replyCount) {
+                        msg.replyCount++
+                    }
+                    else {
+                        msg.replyCount = 0
+                    }
+                }
+            })
         })
-        if (sendMsg)
-            this.client.publish(obj.currentTabTopic, JSON.stringify(msgObj), false)
-
+        this.setState({
+            messages
+        })
     }
 
     handleInputChange = (text) => {
@@ -210,7 +241,7 @@ export default class Thread extends Component {
         for (let i = 0; i < groupMembers.length; i++) {
             color = '#'
             for (var j = 0; j < 6; j++) {
-                color += letters[Math.floor(Math.random() * 16)];
+                color += letters[Math.floor(Math.random() * 10)];
             }
             allColors[groupMembers[i].mobile] = color
         }
@@ -222,40 +253,113 @@ export default class Thread extends Component {
 
     getRandomArbitrary = (min, max) => Math.random() * (max - min) + min
 
-    renderLeftActions = (progress, dragX) => {
-        const trans = dragX.interpolate({
-            inputRange: [0, 50, 100, 101],
-            outputRange: [-20, 0, 0, 1],
-        });
+    renderLeftActions = (progress) => {
+        // const trans = dragX.interpolate({
+        //     inputRange: [0, 50, 100, 101],
+        //     outputRange: [-20, 0, 0, 1],
+        // });
         return (
-            <Button title="Archieve" style={styles.leftAction} onPress={this.close}>
-                <Animated.Text
-                    style={[
-                        styles.actionText,
-                        {
-                            transform: [{ translateX: trans }],
-                        },
-                    ]}>
-                </Animated.Text>
-            </Button>
+            <TouchableOpacity delayLongPress={1000}
+                onLongPress={() => {
+                    console.log("long press")
+                }
+                } >
+                <Text style={{ color: "dodgerblue" }}>{this.state.threadText}</Text>
+            </TouchableOpacity >
+
         );
+
     };
+
+
 
     goToThread = async (item) => {
         const messages = await axios.get(`http://52.66.213.147:3000/api/controlCenter/messenger/getReplyMessages/${item.id}`)
 
-        // console.log(messages.data.data.replies)
-
-
         this.props.navigation.navigate("Thread", {
-            messages: messages.data.data, name: "Thread", topic: item.reciever,
-            userIcon: "contact"
+            messages: messages.data.data, name: `Thread - ${messages.data.data.mainThread}`, topic: item.reciever,
+            userIcon: "contact", setRead: this.props.navigation.state.params.setRead
         })
 
     }
 
+    renderMessage = (item) => {
+        return (
+            <View
+                delayLongPress={1000}
+                onLongPress={() => {
+                    console.log("Message Long pressed")
+                }}
+                style={[styles.message, commonStyles.flexRow,
+                item.sender == obj.mobile ? styles.myMessage : null,
+                item.showName ? { borderTopLeftRadius: 0 } : null,
+                item.showName && item.sender == obj.mobile ?
+                    { borderTopRightRadius: 0 } : null
+                ]}>
+                {
+                    item.showName &&
+                    <View style={[
+                        item.sender == obj.mobile ?
+                            styles.myMessageBorderStyle : styles.borderStyle]}>
+
+                    </View>
+                }
+
+                <View style={styles.msg}>
+
+                    <View style={styles.msgText}>
+                        <View>
+                            {
+                                item.showName && item.reciever.includes('/') &&
+                                item.sender != obj.mobile &&
+
+                                <Text style={{ color: this.state.colors[item.sender] }}>
+                                    {item.sname}
+                                </Text>
+                            }
+                            <Text>
+                                {item.msg}
+                            </Text>
+                        </View>
+
+                        {
+                            item.msg.length < 33 &&
+                            <Text style={[styles.msgTime, styles.innerTime,
+                            item.sender == obj.mobile || !item.reciever.includes('/') || !item.showName ? { marginTop: 5 } : { marginTop: 25 }]}>{item.time}</Text>
+                        }
+                    </View>
+
+                    {/* <Text style={styles.msgTime}>{item.time}</Text> */}
+
+                    {
+                        item.msg.length >= 33 &&
+                        <Text style={styles.msgTime}>
+                            {item.time}
+                        </Text>
+                    }
+                </View>
+            </View>
+        )
+    }
+
+    threadAlert = () => {
+        return (
+            <View style={{
+                position: "absolute",
+                top: "40%",
+                left: "40%",
+                // height: "100%",
+                zIndex: 999,
+                // backgroundColor: ""
+            }}>
+                <Text>Start a Thread</Text>
+            </View>
+        )
+    }
+
     render() {
 
+        const leftContent = <Text>Pull to activate</Text>;
 
         let { messages } = this.state
         let disbleButton = this.state.disbleButton
@@ -273,6 +377,11 @@ export default class Thread extends Component {
         const name = this.props.navigation.state.params.name
         return (
             <>
+                {
+                    // this.state.showThreadAlert &&
+                    this.threadAlert()
+
+                }
                 {/* <TouchableOpacity style={styles.down}>
                     <Image source={require('../../assets/down.png')}
                         style={{ width: 20, height: 20 }}
@@ -320,90 +429,67 @@ export default class Thread extends Component {
                                             <View style={styles.line}></View>
                                             <Text style={styles.dateText}>{date}</Text>
                                         </View>
-                                        <View>
-                                            {
-                                                messages[date].map((item, index) => (
-                                                    item.showName = true &&
-                                                    item.sname != "NA" &&
-                                                    // topic.includes('/') &&
-                                                    (index == 0 ||
-                                                        (index > 0 &&
-                                                            messages[date][index - 1].sname != item.sname)),
-                                                    <View >
+                                        {/* <View> */}
+                                        {
+                                            messages[date].map((item, index) => (
+                                                item.showName = true &&
+                                                item.sname != "NA" &&
+                                                // topic.includes('/') &&
+                                                (index == 0 ||
+                                                    (index > 0 &&
+                                                        messages[date][index - 1].sname != item.sname)),
+                                                <View key={index}>
+                                                    <TouchableHighlight
+                                                        underlayColor="lightblue"
+                                                        onPress={() => { }}
+                                                        delayLongPress={1000}
+                                                        onLongPress={() => {
+                                                            this.setState({
+                                                                showThreadAlert: true
+                                                            })
+                                                        }}
+                                                        style={{
+                                                            padding: 25,
+                                                            paddingBottom: 10, paddingTop: 10,
+                                                            // backgroundColor: this.state.backgroundColor
+                                                        }}
+                                                    >
+                                                        {/* <View> */}
+                                                        <View>
+                                                            {this.renderMessage(item)}
 
-                                                        <View
-                                                            key={index}
-                                                            style={[styles.message, commonStyles.flexRow,
-                                                            item.sender == obj.mobile ? styles.myMessage : null,
-                                                            item.showName ? { borderTopLeftRadius: 0 } : null,
-                                                            item.showName && item.sender == obj.mobile ?
-                                                                { borderTopRightRadius: 0 } : null
-                                                            ]}>
-                                                            {/* <Swipeable
-                                                                renderLeftActions={this.renderLeftActions}> */}
-                                                            {
-                                                                item.showName &&
-                                                                <View style={[
-                                                                    item.sender == obj.mobile ?
-                                                                        styles.myMessageBorderStyle : styles.borderStyle]}>
 
-                                                                </View>
-                                                            }
-                                                            <View style={styles.msg}>
-                                                                <View style={styles.msgText}>
-                                                                    <View>
-                                                                        {
-                                                                            item.showName && item.reciever.includes('/') &&
-                                                                            item.sender != obj.mobile &&
-
-                                                                            <Text style={{ color: this.state.colors[item.sender] }}>
-                                                                                {item.sname}
-                                                                            </Text>
-                                                                        }
-                                                                        <Text>
-                                                                            {item.msg}
-                                                                        </Text>
-                                                                    </View>
-
-                                                                    {
-                                                                        item.msg.length < 33 &&
-                                                                        <Text style={[styles.msgTime, styles.innerTime,
-                                                                        item.sender == obj.mobile || !topic.includes('/') || !item.showName ? { marginTop: 5 } : { marginTop: 25 }]}>{item.time}</Text>
-                                                                    }
-                                                                </View>
-                                                                {/* <Text style={styles.msgTime}>{item.time}</Text> */}
-
-                                                                {
-                                                                    item.msg.length >= 33 &&
-                                                                    <Text style={styles.msgTime}>
-                                                                        {item.time}
-                                                                    </Text>
-                                                                }
-                                                            </View>
-                                                            {/* </Swipeable> */}
 
                                                         </View>
-                                                        {
-                                                            item.replyCount &&
-                                                            <TouchableOpacity
+                                                    </TouchableHighlight>
+                                                    {
+                                                        item.replyCount &&
+                                                        (item.replyCount > 1 ?
+                                                            item.replyText = "replies" : item.replyText = "reply") &&
+                                                        <View
+                                                            style={[
+                                                                item.replyCount ?
+                                                                    styles.messageReply : null,
+                                                                item.sender == obj.mobile ? styles.myMessageReply : null
+                                                            ]}>
+                                                            <TouchableHighlight
+                                                                underlayColor="lightgray"
                                                                 onPress={() => {
                                                                     this.goToThread(item)
                                                                 }}
                                                                 key={index + 1}
-                                                                style={[
-                                                                    item.replyCount ?
-                                                                        styles.messageReply : null,
-                                                                    item.sender == obj.mobile ? styles.myMessageReply : null
-                                                                ]}>
+                                                            >
                                                                 <Text style={styles.replyText}>
-                                                                    {item.replyCount} replies
-                                                            </Text>
-                                                            </TouchableOpacity>
-                                                        }
-                                                    </View>
-                                                ))
-                                            }
-                                        </View>
+                                                                    {item.replyCount} {item.replyText}
+                                                                </Text>
+                                                            </TouchableHighlight>
+                                                        </View>
+                                                    }
+                                                </View>
+
+                                            ))
+                                        }
+                                        {/* </View> */}
                                     </View>
                                 ))
 
