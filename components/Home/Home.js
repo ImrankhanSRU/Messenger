@@ -55,7 +55,7 @@ class Home extends Component {
          // message is Buffer
          if (message != "shub") {
             let msg = JSON.parse(message)
-            if (msg.sender != obj.mobile && (msg.reciever == obj.mobile || msg.reciever.includes('/'))) {
+            if (msg.sender != obj.mobile && msg.reciever != obj.currentTabTopic && (msg.reciever == obj.mobile || msg.reciever.includes('/'))) {
                scope.hello.play()
             }
 
@@ -148,6 +148,9 @@ class Home extends Component {
          msg.time = time
          this.props.addMessage(msg)
       }
+      else {
+         this.increaseReplyCount(msg)
+      }
       if (msg.reciever.includes('/')) {
          if (!this.props.counts[msg.reciever]) {
             this.increaseConversationCount(msg.reciever)
@@ -159,7 +162,34 @@ class Home extends Component {
       this.props.fetchMessagesCount()
    }
 
+   increaseReplyCount = (newMsg) => {
+      let messages = [{ ...this.props.messages, ...this.props.groupMessages }]
+      messages = messages[0][0]
+      let topics = Object.keys(messages)
+      topics.map(top => {
+         Object.keys(messages[top]).map(day => {
+            messages[top][day].map(msg => {
+               if (msg.id == newMsg.reply_to_msg_id) {
+                  if (msg.replyCount) {
+                     msg.replyCount++
+                  }
+                  else {
+                     msg.replyCount = 1
+                  }
+               }
+            })
+
+         })
+      })
+      let counts = { ...this.state }
+      this.setState({
+         counts
+      })
+   }
+
    componentDidUpdate() {
+
+
       if (this.props.plants && !this.props.groupMessages.length) {
          this.props.fetchGroupMessages(this.props.plants)
       }

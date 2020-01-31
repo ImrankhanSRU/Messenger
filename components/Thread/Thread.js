@@ -43,6 +43,7 @@ export default class ViewMessage extends Component {
     }
 
     componentDidMount() {
+        obj.isThreadOpen = true
         let { topic } = this.props.navigation.state.params
         if (topic.split('/')[0] == "plants") {
             this.getAllUsers()
@@ -66,6 +67,7 @@ export default class ViewMessage extends Component {
             if (message != "shub") {
                 let time = JSON.parse(message).time
                 let msg = JSON.parse(message)
+                console.log(msg)
                 // if (time.includes('/')) {
                 //     msg.time = scope.formatMessageTime(time)
                 //     // msg.fullDate = new Date().toLocaleDateString()
@@ -78,6 +80,7 @@ export default class ViewMessage extends Component {
         })
 
         // this.subscribeToTopic(topic)
+        this.subscribeToTopic(obj.mobile)
 
         this.keyboardDidShowListener = Keyboard.addListener(
             'keyboardDidShow',
@@ -97,6 +100,7 @@ export default class ViewMessage extends Component {
 
     componentWillUnmount() {
         // obj.currentTabTopic = ''
+        obj.isThreadOpen = false
         let { topic } = this.props.navigation.state.params
         this.keyboardDidShowListener.remove();
         this.keyboardDidHideListener.remove();
@@ -167,10 +171,11 @@ export default class ViewMessage extends Component {
         this.setState({
             messages,
             msg: ''
-        })
+        })  
         if (sendMsg) {
             this.client.publish(obj.currentTabTopic, JSON.stringify(msgObj), false)
         }
+        this.props.navigation.state.params.increaseReplyCount(msgObj)
 
     }
 
@@ -259,7 +264,7 @@ export default class ViewMessage extends Component {
                             <Image style={[{ width: 40, height: 40, marginRight: 10, borderRadius: 50 }]}
                                 source={iconObj[userIcon]} />
                             <View>
-                                <Text style={[styles.heading, { color: "white", fontSize: 20 }]}>
+                                <Text style={[styles.heading, { color: "white", fontSize: 18 }]}>
                                     {
                                         ((name).length > 25) ?
                                             (((name).substring(0, 25 - 3)) + '...') :
@@ -292,7 +297,7 @@ export default class ViewMessage extends Component {
                                                 messages[index - 1].sname != item.sname)),
                                         <View key={index} style={{
                                             backgroundColor: "", padding: 25,
-                                            paddingBottom: 0
+                                            paddingBottom: 0, marginBottom: 0
                                         }} >
                                             <View
                                                 // key={index}
@@ -357,43 +362,61 @@ export default class ViewMessage extends Component {
                                     ))
                                 }
                             </View>
-                            <View style={{
-                                marginBottom: 20,
-                                backgroundColor: "white",
-                                borderRadius: 5,
-                                padding: 10,
-                                maxWidth: "100%",
-                                marginLeft: "auto",
-                                marginRight: "auto"
-                            }}>
-                                <Text style={{ color: "darkgreen", fontSize: 17 }}>
-                                    {mainThread.sname}
-                                </Text>
-
-                                <View style={[commonStyles.flexRow]}>
-                                    <View>
-                                        <Text style={{ fontSize: 17 }}>
-                                            {mainThread.mainThread}
-                                        </Text>
+                            <View
+                                style={{
+                                    backgroundColor: "white",
+                                    maxWidth: "80%",
+                                    marginLeft: "auto",
+                                    marginRight: "auto",
+                                    padding: 10,
+                                    borderRadius: 10
+                                }}
+                            >
+                                {
+                                    mainThread.showName &&
+                                    <View style={[
+                                        mainThread.sender == obj.mobile ?
+                                            styles.myMessageBorderStyle : styles.borderStyle]}>
 
                                     </View>
+                                }
+
+                                <View style={styles.msg}>
+
+                                    <View style={styles.msgText}>
+                                        <View>
+                                            {
+                                                // mainThread.showName = true &&
+                                                // mainThread.showName && mainThread.receiver.includes('/') &&
+                                                // mainThread.sender != obj.mobile &&
+
+                                                <Text style={{ color: "darkgreen", fontSize: 17 }}>
+                                                    {mainThread.sname}
+                                                </Text>
+                                            }
+                                            <Text style={{ fontSize: 17 }}>
+                                                {mainThread.mainThread}
+                                            </Text>
+                                        </View>
+
+
+                                    </View>
+
                                     {
                                         mainThread.mainThread.length < 33 &&
                                         <Text style={[styles.msgTime, styles.innerTime,
-                                        mainThread.sender == obj.mobile || !mainThread.receiver.includes('/') ||
-                                            !mainThread.showName ? { marginTop: 5 } : { marginTop: 25 }]}>
-                                            {this.formatDate(mainThread.date)}
+                                        mainThread.sender == obj.mobile || !mainThread.receiver.includes('/')
+                                            || !mainThread.showName ? { marginTop: 5 } : { marginTop: 25 }]}>
+                                            {mainThread.date}
                                         </Text>
                                     }
-
                                     {
                                         mainThread.mainThread.length >= 33 &&
                                         <Text style={styles.msgTime}>
-                                            {this.formatDate(mainThread.date)}
+                                            {mainThread.date}
                                         </Text>
                                     }
                                 </View>
-
                             </View>
                             {/* </View> */}
                         </InvertibleScrollView>

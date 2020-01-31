@@ -1,13 +1,12 @@
 import React, { Component } from 'react'
-import { View, Text, Image, TextInput, Keyboard, KeyboardAvoidingView, Button, Animated } from 'react-native'
+import { View, Text, Image, TextInput, Keyboard, KeyboardAvoidingView, Button, Alert } from 'react-native'
 import styles from './ViewMessageCss'
 import obj from '../config'
 import commonStyles from '../styles'
 import { TouchableOpacity, TouchableHighlight } from 'react-native-gesture-handler'
 import InvertibleScrollView from 'react-native-invertible-scroll-view';
 import axios from 'axios'
-import Swipeable from 'react-native-gesture-handler/Swipeable';
-import GestureRecognizer, { swipeDirections } from 'react-native-swipe-gestures';
+
 
 const mqtt = require('mqtt')
 
@@ -37,7 +36,7 @@ export default class Thread extends Component {
             disbleButton: true,
             colors: {},
             height: 0,
-            showThreadAlert: false
+            // showThreadAlert: false
         }
 
 
@@ -62,7 +61,6 @@ export default class Thread extends Component {
         })
 
 
-
         scope.client.on('message', function (topic, message) {
             // message is Buffer
             if (message != "shub") {
@@ -81,6 +79,9 @@ export default class Thread extends Component {
                         scope.addMessage(msg)
                     }
                 }
+                // else if (msg.reply_to_msg_id) {
+                //     scope.increaseReplyCount(msg)
+                // }
 
             }
         })
@@ -185,7 +186,7 @@ export default class Thread extends Component {
             if (sendMsg)
                 this.client.publish(obj.currentTabTopic, JSON.stringify(msgObj), false)
         }
-        else {
+        else if(!obj.isThreadOpen){
             this.increaseReplyCount(newMsg)
         }
 
@@ -201,7 +202,7 @@ export default class Thread extends Component {
                         msg.replyCount++
                     }
                     else {
-                        msg.replyCount = 0
+                        msg.replyCount = 1
                     }
                 }
             })
@@ -277,8 +278,9 @@ export default class Thread extends Component {
         const messages = await axios.get(`http://52.66.213.147:3000/api/controlCenter/messenger/getReplyMessages/${item.id}`)
 
         this.props.navigation.navigate("Thread", {
-            messages: messages.data.data, name: `Thread - ${messages.data.data.mainThread}`, topic: item.reciever,
-            userIcon: "contact", setRead: this.props.navigation.state.params.setRead
+            messages: messages.data.data, name: `Thread - ${messages.data.data.mainThread}`, topic: obj.currentTabTopic,
+            userIcon: "contact", setRead: this.props.navigation.state.params.setRead, 
+            increaseReplyCount: this.increaseReplyCount
         })
 
     }
@@ -286,10 +288,7 @@ export default class Thread extends Component {
     renderMessage = (item) => {
         return (
             <View
-                delayLongPress={1000}
-                onLongPress={() => {
-                    console.log("Message Long pressed")
-                }}
+
                 style={[styles.message, commonStyles.flexRow,
                 item.sender == obj.mobile ? styles.myMessage : null,
                 item.showName ? { borderTopLeftRadius: 0 } : null,
@@ -342,25 +341,27 @@ export default class Thread extends Component {
         )
     }
 
-    threadAlert = () => {
-        return (
-            <View style={{
-                position: "absolute",
-                top: "40%",
-                left: "40%",
-                // height: "100%",
-                zIndex: 999,
-                // backgroundColor: ""
-            }}>
-                <Text>Start a Thread</Text>
-            </View>
-        )
+    threadAlert = (item) => {
+        let title = !item.replyCount ? "Create Thread" : "Reply To Thread"
+        let msg = item.msg.length < 50 ? item.msg : item.msg.substr(0, 47) + "..."
+        Alert.alert(
+            title,
+            msg,
+            [
+                // { text: 'Ask me later', onPress: () => console.log('Ask me later pressed') },
+                {
+                    text: 'Cancel',
+                    style: 'cancel',
+                },
+                { text: 'OK', onPress: () => this.goToThread(item) },
+            ],
+            { cancelable: false },
+        );
     }
 
     render() {
 
-        const leftContent = <Text>Pull to activate</Text>;
-
+        console.log(obj.currentTabTopic)
         let { messages } = this.state
         let disbleButton = this.state.disbleButton
         let { userIcon, topic } = this.props.navigation.state.params
@@ -377,11 +378,7 @@ export default class Thread extends Component {
         const name = this.props.navigation.state.params.name
         return (
             <>
-                {
-                    // this.state.showThreadAlert &&
-                    this.threadAlert()
 
-                }
                 {/* <TouchableOpacity style={styles.down}>
                     <Image source={require('../../assets/down.png')}
                         style={{ width: 20, height: 20 }}
@@ -441,16 +438,13 @@ export default class Thread extends Component {
                                                 <View key={index}>
                                                     <TouchableHighlight
                                                         underlayColor="lightblue"
-                                                        onPress={() => { }}
-                                                        delayLongPress={1000}
+                                                        delayLongPress={1500}
                                                         onLongPress={() => {
-                                                            this.setState({
-                                                                showThreadAlert: true
-                                                            })
+                                                            this.threadAlert(item)
                                                         }}
                                                         style={{
                                                             padding: 25,
-                                                            paddingBottom: 10, paddingTop: 10,
+                                                            paddingBottom: 7, paddingTop: 7,
                                                             // backgroundColor: this.state.backgroundColor
                                                         }}
                                                     >

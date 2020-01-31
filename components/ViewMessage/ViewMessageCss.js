@@ -107,7 +107,7 @@ export default StyleSheet.create({
     line: {
         position: "relative",
         top: "40%",
-        width: "100%",
+        width: "90%",
         borderTopColor: "#c9c9c9",
         borderTopWidth: 1,
         zIndex: -1,
