@@ -67,7 +67,6 @@ export default class ViewMessage extends Component {
             if (message != "shub") {
                 let time = JSON.parse(message).time
                 let msg = JSON.parse(message)
-                console.log(msg)
                 // if (time.includes('/')) {
                 //     msg.time = scope.formatMessageTime(time)
                 //     // msg.fullDate = new Date().toLocaleDateString()
@@ -297,7 +296,8 @@ export default class ViewMessage extends Component {
                                                 messages[index - 1].sname != item.sname)),
                                         <View key={index} style={{
                                             backgroundColor: "", padding: 25,
-                                            paddingBottom: 0, marginBottom: 0
+                                            paddingBottom: 0, paddingTop: 0, marginBottom: 8,
+                                            marginTop: 8
                                         }} >
                                             <View
                                                 // key={index}
@@ -369,6 +369,7 @@ export default class ViewMessage extends Component {
                                     marginLeft: "auto",
                                     marginRight: "auto",
                                     padding: 10,
+                                    marginBottom: 20,
                                     borderRadius: 10
                                 }}
                             >

@@ -139,7 +139,7 @@ export default function List(props) {
             {
                 contacts.map((item, index) => (
                     (item.mobile || item.gname || item.itemName) && (item.mobile != obj.mobile) &&
-                    <TouchableHighlight underlayColor="lightgray" key={index}
+                    <TouchableHighlight underlayColor="#F5F5F5" key={index}
                         onPress={() => { filterMessages(props.messages, item, props.navigation, props.setRead, props.handleOutside) }}>
                         <View style={[commonStyles.flexRow, styles.item]}>
                             <View style={[styles.image, commonStyles.flexColumn]}>

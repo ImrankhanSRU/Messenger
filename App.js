@@ -6,6 +6,7 @@ import Login from './components/Login/Login'
 import List from './components/List/List'
 import ViewMessage from './components/ViewMessage/ViewMessage'
 import Thread from './components/Thread/Thread'
+import GroupDetails from './components/GroupDetails/GroupDetails'
 
 const MainNavigator = createStackNavigator({
 
@@ -46,6 +47,12 @@ const MainNavigator = createStackNavigator({
       headerShown: false
     }
   },
+  GroupDetails: {
+    screen: GroupDetails,
+    navigationOptions: {
+      headerShown: false
+    }
+  }
 });
 
 const App = createAppContainer(MainNavigator);

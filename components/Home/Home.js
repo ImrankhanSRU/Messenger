@@ -27,6 +27,7 @@ const mqtt = require('mqtt')
 
 class Home extends Component {
 
+   moveAnimation = new Animated.ValueXY({ x: Dimensions.get('window').width * 2, y: 100 })
 
    options = {
       port: 9000,
@@ -317,6 +318,8 @@ class Home extends Component {
    }
 
    showSearch = () => {
+
+      this.moveSearch()
       this.setState({
          showSearch: true
       })
@@ -333,8 +336,30 @@ class Home extends Component {
          this.setState({ index })
    }
 
+   moveSearch = () => {
+
+      Animated.spring(this.moveAnimation, {
+         toValue: { x: 0, y: 0 },
+      }).start()
+   }
+
+   hideSearch = () => {
+      console.log("In hideSearch")
+      Animated.spring(this.moveAnimation, {
+
+         toValue: { x: Dimensions.get('window').width * 2, y: 0 },
+      }).start()
+      setTimeout(() => {
+         this.setState({
+            searchText: '',
+            showSearch: false
+         })
+      }, 300)
+   }
+
 
    render() {
+      console.log(this.props.groupMessages)
       return (
          this.props.pending ?
             <View style={styles.loading}>
@@ -368,17 +393,18 @@ class Home extends Component {
 
                {
                   this.state.showSearch &&
-                  <View style={[commonStyles.flexRow, { justifyContent: "flex-start", alignItems: "center" }]}>
+                  // <Animated.View style={[this.moveAnimation.getLayout()]} >
+
+                  <Animated.View style={[commonStyles.flexRow, {
+                     justifyContent: "flex-start", alignItems: "center"
+                  }, this.moveAnimation.getLayout()]}>
+
                      <TouchableOpacity
-                        onPress={() => {
-                           this.setState({
-                              showSearch: false,
-                              searchText: ''
-                           })
-                        }}
+                        onPress={() => { this.hideSearch() }}
                      >
                         <Image style={{ width: 20, height: 20, marginRight: 10, marginLeft: 5 }} source={require('../../assets/back-green.png')} />
                      </TouchableOpacity>
+
                      <TextInput
                         style={styles.search}
                         autoFocus={true}
@@ -386,7 +412,9 @@ class Home extends Component {
                         onChangeText={(text) => { this.handleSearch(text) }}
                         placeholder="Search..."
                      />
-                  </View>
+                  </Animated.View>
+
+                  // </View>
                }
 
                {

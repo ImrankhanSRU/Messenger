@@ -1,18 +1,23 @@
 import React, { Component } from 'react'
-import { View, Text, Image, TextInput, Keyboard, KeyboardAvoidingView, Button, Alert } from 'react-native'
+import {
+    View, Text, Image, TextInput, Keyboard, KeyboardAvoidingView, Button, Alert,
+    TouchableOpacity, TouchableHighlight, Dimensions, Modal
+} from 'react-native'
 import styles from './ViewMessageCss'
 import obj from '../config'
 import commonStyles from '../styles'
-import { TouchableOpacity, TouchableHighlight } from 'react-native-gesture-handler'
 import InvertibleScrollView from 'react-native-invertible-scroll-view';
 import axios from 'axios'
+// import ImageView from 'react-native-image-view';
+import ImageViewer from 'react-native-image-zoom-viewer';
 
 
 const mqtt = require('mqtt')
 
 export default class Thread extends Component {
-    messageRef = React.createRef();
 
+    messageRef = React.createRef();
+    groupDetails;
     options = {
         port: 9000,
         host: '52.66.213.147',
@@ -26,8 +31,10 @@ export default class Thread extends Component {
             // console.log(err)
         })
     }
+    ListView_Ref = React.createRef();
 
     constructor(props) {
+
         super(props)
         this.state = {
             messages: props.navigation.state.params.messages,
@@ -36,7 +43,15 @@ export default class Thread extends Component {
             disbleButton: true,
             colors: {},
             height: 0,
-            // showThreadAlert: false
+            images: [{
+                // Simplest usage.
+                url: '',
+
+                width: 806,
+                height: 720,
+
+            }],
+            isImageViewVisible: false
         }
 
 
@@ -129,6 +144,7 @@ export default class Thread extends Component {
 
     getGroupDetails = async (id) => {
         const response = await axios.get(`http://52.66.213.147:3000/api/controlCenter/messenger/getGroupDetails/${id}`)
+        this.groupDetails = response.data.data
         this.getRandomColor(response.data.data.groupMembers)
     }
 
@@ -186,7 +202,7 @@ export default class Thread extends Component {
             if (sendMsg)
                 this.client.publish(obj.currentTabTopic, JSON.stringify(msgObj), false)
         }
-        else if(!obj.isThreadOpen){
+        else if (!obj.isThreadOpen) {
             this.increaseReplyCount(newMsg)
         }
 
@@ -262,7 +278,7 @@ export default class Thread extends Component {
         return (
             <TouchableOpacity delayLongPress={1000}
                 onLongPress={() => {
-                    console.log("long press")
+                    // console.log("long press")
                 }
                 } >
                 <Text style={{ color: "dodgerblue" }}>{this.state.threadText}</Text>
@@ -279,13 +295,18 @@ export default class Thread extends Component {
 
         this.props.navigation.navigate("Thread", {
             messages: messages.data.data, name: `Thread - ${messages.data.data.mainThread}`, topic: obj.currentTabTopic,
-            userIcon: "contact", setRead: this.props.navigation.state.params.setRead, 
+            userIcon: "contact", setRead: this.props.navigation.state.params.setRead,
             increaseReplyCount: this.increaseReplyCount
         })
 
     }
 
     renderMessage = (item) => {
+        let imgUri = "https://drive.google.com/thumbnail?id="
+        if (item.isMedia == 1) {
+            let split = item.msg.split('/')
+            imgUri += split[split.length - 2]
+        }
         return (
             <View
 
@@ -316,9 +337,20 @@ export default class Thread extends Component {
                                     {item.sname}
                                 </Text>
                             }
-                            <Text>
-                                {item.msg}
-                            </Text>
+                            {
+                                !item.isMedia ?
+                                    <Text>
+                                        {item.msg}
+                                    </Text> :
+                                    <TouchableOpacity onPress={() => { this.showImage(imgUri) }} >
+                                        <Image source={{ uri: imgUri }}
+                                            style={{
+                                                height: Dimensions.get('window').height / 4,
+                                                width: Dimensions.get('window').width / 1.5
+                                            }}
+                                        />
+                                    </TouchableOpacity>
+                            }
                         </View>
 
                         {
@@ -341,6 +373,15 @@ export default class Thread extends Component {
         )
     }
 
+    showImage = (uri) => {
+        let images = [...this.state.images]
+        images[0].url = uri
+        this.setState({
+            images,
+            isImageViewVisible: true
+        })
+    }
+
     threadAlert = (item) => {
         let title = !item.replyCount ? "Create Thread" : "Reply To Thread"
         let msg = item.msg.length < 50 ? item.msg : item.msg.substr(0, 47) + "..."
@@ -359,9 +400,13 @@ export default class Thread extends Component {
         );
     }
 
+    goToGroupDetails = () => {
+        // this.props.navigation.navigate("GroupDetails", { groupDetails: this.groupDetails, topic: obj.currentTabTopic })
+    }
+
+
     render() {
 
-        console.log(obj.currentTabTopic)
         let { messages } = this.state
         let disbleButton = this.state.disbleButton
         let { userIcon, topic } = this.props.navigation.state.params
@@ -378,33 +423,69 @@ export default class Thread extends Component {
         const name = this.props.navigation.state.params.name
         return (
             <>
+                {
+                    // <ImageView
+                    //     images={this.state.images}
+                    //     imageIndex={0}
+                    //     isTapZoomEnabled
+                    //     isVisible={this.state.isImageViewVisible}
+                    //     onClose = {() => {this.setState({isImageViewVisible: false})}}
+                    //     renderFooter={(currentImage) => (<View><Text>My footer</Text></View>)}
+                    // />
+                    <Modal visible={this.state.isImageViewVisible} transparent={true}>
+                        <ImageViewer imageUrls={this.state.images}
+                            enableSwipeDown={true}
+                            onSwipeDown={() => {
+                                this.setState({
+                                    isImageViewVisible: false
+                                })
+                            }}
+                        />
+                    </Modal>
+                }
 
-                {/* <TouchableOpacity style={styles.down}>
+                <TouchableOpacity style={styles.down}
+                    onPress={() => {
+                        console.log(this.ListView_Ref)
+                        this.ListView_Ref.scrollTo({ x: 0, y: 0, animated: true });
+                    }}
+                >
                     <Image source={require('../../assets/down.png')}
                         style={{ width: 20, height: 20 }}
-                        onPress={() => {
-                            console.log(this.ListView_Ref)
-                            this.ListView_Ref.scrollTo({ x: 0, y: 0, animated: true });
-                        }} />
-                </TouchableOpacity> */}
+                    />
+                </TouchableOpacity>
+                {/* <View style={{ marginTop: "auto", marginBottom: "auto", position: "absolute", zIndex: 2000, width: "100%", height: "50%", flex: 1, backgroundColor: "white" }}>
+                    <Image
+                        style={{ width: "100%", height: "100%" }}
+                        source={{ uri: "https://drive.google.com/thumbnail?id=1edfm6Kky6JuwCCaKjx5s5OjdkRHt-e4h" }}
+                    />
+                </View> */}
                 <View
                     behavior={null} keyboardVerticalOffset={0}
                     style={[commonStyles.flexColumn, styles.viewMessageContainer]} >
 
+
                     <View style={[commonStyles.flexRow, styles.headerTop, { backgroundColor: "darkgreen", padding: 10, alignItems: "center" }]}>
+
                         <View style={{ display: "flex", flexDirection: "row", alignItems: "center" }}>
-                            <TouchableOpacity underlayColor="lightgray" onPress={() => this.props.navigation.goBack()} >
+                            <TouchableOpacity underlayColor="#F5F5F5" onPress={() => this.props.navigation.goBack()} >
                                 <Image style={{ marginRight: 10, width: 18, height: 18 }} source={require('../../assets/back.png')} />
                             </TouchableOpacity>
                             <Image style={[{ width: 40, height: 40, marginRight: 10, borderRadius: 50 }]}
                                 source={iconObj[userIcon]} />
-                            <Text style={[styles.heading, { color: "white", fontSize: 20 }]}>
-                                {
-                                    ((name).length > 20) ?
-                                        (((name).substring(0, 20 - 3)) + '...') :
-                                        name
-                                }
-                            </Text>
+                            <TouchableHighlight
+                                style={{}}
+                                underlayColor="#d1d4d7"
+                                onPress={() => { this.goToGroupDetails() }}>
+                                <Text style={[styles.heading, { color: "white", fontSize: 20 }]}>
+                                    {
+                                        ((name).length > 20) ?
+                                            (((name).substring(0, 20 - 3)) + '...') :
+                                            name
+                                    }
+                                </Text>
+                            </TouchableHighlight>
+
                         </View>
                         <View style={{ display: "flex", flexDirection: "row" }}>
                             <Image style={[commonStyles.icon, commonStyles.mRight10]} source={require('../../assets/search.png')} />
@@ -467,7 +548,7 @@ export default class Thread extends Component {
                                                                 item.sender == obj.mobile ? styles.myMessageReply : null
                                                             ]}>
                                                             <TouchableHighlight
-                                                                underlayColor="lightgray"
+                                                                underlayColor="#d1d4d7"
                                                                 onPress={() => {
                                                                     this.goToThread(item)
                                                                 }}
