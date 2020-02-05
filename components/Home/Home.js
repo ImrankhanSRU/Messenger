@@ -344,7 +344,6 @@ class Home extends Component {
    }
 
    hideSearch = () => {
-      console.log("In hideSearch")
       Animated.spring(this.moveAnimation, {
 
          toValue: { x: Dimensions.get('window').width * 2, y: 0 },
@@ -359,8 +358,7 @@ class Home extends Component {
 
 
    render() {
-      console.log(this.props.groupMessages)
-      return (
+     return (
          this.props.pending ?
             <View style={styles.loading}>
                <View style={commonStyles.flexColumn, { justifyContent: "center", alignItems: "center", height: "50%" }}>
@@ -455,7 +453,7 @@ class Home extends Component {
                                  </Text>
                                  {
                                     this.state.counts[route.title] > 0 &&
-                                    <Text style={styles.count}>
+                                    <Text style={[styles.count, { backgroundColor: color }]}>
                                        {this.state.counts[route.title]}
                                     </Text>
                                  }

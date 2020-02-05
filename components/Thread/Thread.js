@@ -92,7 +92,7 @@ export default class ViewMessage extends Component {
     }
 
     getAllUsers = async () => {
-        const response = await axios.get(`http://52.66.213.147:3000/api/userManagement/getUserDetails`)
+        const response = await axios.get(`${obj.BASE_URL}api/userManagement/getUserDetails`)
         this.getRandomColor(response.data.data)
 
     }
@@ -120,7 +120,7 @@ export default class ViewMessage extends Component {
     }
 
     getGroupDetails = async (id) => {
-        const response = await axios.get(`http://52.66.213.147:3000/api/controlCenter/messenger/getGroupDetails/${id}`)
+        const response = await axios.get(`${obj.BASE_URL}api/controlCenter/messenger/getGroupDetails/${id}`)
         this.getRandomColor(response.data.data.groupMembers)
     }
 

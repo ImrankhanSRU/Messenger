@@ -94,7 +94,7 @@ export default StyleSheet.create({
     },
     count: {
         textAlign: "center",
-        backgroundColor: "white",
+        // backgroundColor: "white",
         color: "darkgreen",
         paddingLeft: 7,
         paddingRight: 7,

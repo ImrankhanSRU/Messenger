@@ -4,18 +4,18 @@ import commonStyles from '../styles'
 import styles from './ListCss'
 import obj from '../config'
 
-function goToMessages(messages, navigation, item, setRead) {
+function goToMessages(messages, navigation, item, setRead, unReadCount) {
     let userIcon = item.mobile ? 'contact' :
         (item.gname) ? 'group' : 'plant'
-    navigation.navigate("ViewMessage", { messages, name: item.name, topic: item.topic, setRead, userIcon })
+    navigation.navigate("ViewMessage", { messages, name: item.name, topic: item.topic, setRead, userIcon, unReadCount })
 }
 
-async function filterMessages(messages, item, navigation, setRead, handleOutside) {
+function filterMessages(messages, item, navigation, setRead, handleOutside, unReadCount) {
     handleOutside()
     let messagesToRead = [];
     messagesToRead = messages[0][item.topic]
     setRead(item.topic)
-    goToMessages(messagesToRead, navigation, item, setRead)
+    goToMessages(messagesToRead, navigation, item, setRead, unReadCount)
 
 }
 
@@ -74,10 +74,28 @@ const getLastMessage = (msgs, topic) => {
             name = lastMsg.sname
         }
 
-        return `${name}: ${lastMsg.msg}`
+        let ele;
+        if (lastMsg.isMedia) {
+            let src = lastMsg.isMedia == 1 ? require('../../assets/camera.png') : require('../../assets/file.png')
+            let text = lastMsg.isMedia == 1 ? "Photo" : "File"
+            ele = <View style={[commonStyles.flexRow, { alignItems: "center" }]}>
+                <Text style={{ color: "gray", fontSize: 14 }}>{name}: </Text>
+                <Image style={{ width: 18, height: 18, marginRight: 5 }} source={src} />
+                <Text style={{ color: "gray", fontSize: 14 }}>{text}</Text>
+            </View>
+        }
+        else {
+            let str = `${name}: ${lastMsg.msg}`
+            ele = <Text style={{ color: "gray", fontSize: 14 }}>
+                {(str.length > 30) ?
+                    ((str.substring(0, 30 - 3)) + '...') :
+                    str}
+            </Text>
+        }
+        return (ele)
 
     }
-    return ''
+    return (<Text></Text>)
 }
 
 
@@ -140,7 +158,7 @@ export default function List(props) {
                 contacts.map((item, index) => (
                     (item.mobile || item.gname || item.itemName) && (item.mobile != obj.mobile) &&
                     <TouchableHighlight underlayColor="#F5F5F5" key={index}
-                        onPress={() => { filterMessages(props.messages, item, props.navigation, props.setRead, props.handleOutside) }}>
+                        onPress={() => { filterMessages(props.messages, item, props.navigation, props.setRead, props.handleOutside, props.counts[item.topic]) }}>
                         <View style={[commonStyles.flexRow, styles.item]}>
                             <View style={[styles.image, commonStyles.flexColumn]}>
                                 <Image style={[styles.userIcon, item.mobile ? { width: 50, height: 50 } : null]}
@@ -167,7 +185,7 @@ export default function List(props) {
                                         </Text>
                                     }
 
-                                    <Text style={{ color: "gray", fontSize: 14 }}>
+                                    {/* <Text style={{ color: "gray", fontSize: 14 }}>
                                         {
 
                                             // Object.keys(messages[0][item.topic]).length > 0 &&
@@ -175,7 +193,10 @@ export default function List(props) {
                                                 (((getLastMessage(messages[0], item.topic)).substring(0, 30 - 3)) + '...') :
                                                 getLastMessage(messages[0], item.topic)
                                         }
-                                    </Text>
+                                    </Text> */}
+                                    {/* <View> */}
+                                    {getLastMessage(messages[0], item.topic)}
+                                    {/* </View> */}
                                 </View>
                                 <View style={styles.indicator}>
                                     <Text
