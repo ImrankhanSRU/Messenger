@@ -145,12 +145,14 @@ const sort = (a, b) => {
     else {
         return 1;
     }
+
 }
 
 
 export default function List(props) {
     let { messages } = props
     let contacts = sortByLatest(props)
+    // let contacts = props.data
 
     return (
         <ScrollView style={styles.tab}>

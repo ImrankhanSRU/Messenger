@@ -190,5 +190,38 @@ export default StyleSheet.create({
     // },
     opacity: {
         opacity: 0.4
+    },
+    search: {
+        // width: "100%",
+        // display: "flex",
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        backgroundColor: "darkgreen",
+        padding: 5,
+        paddingBottom: 0,
+        fontSize: 17,
+    },
+    searchInput: {
+        marginLeft: 20,
+        color: "white",
+        width: width / 2,
+        borderBottomWidth: 2,
+        borderBottomColor: "#008000",
+        marginBottom: 10,
+        paddingBottom: 5
+    },
+    searchWord: {
+        backgroundColor: "yellow"
+    },
+    notFound: {
+        padding: 10,
+        backgroundColor: "white",
+        position: "absolute",
+        top: "40%",
+        left: "40%",
+        zIndex: 10,
+        borderRadius: 10
     }
+
 })

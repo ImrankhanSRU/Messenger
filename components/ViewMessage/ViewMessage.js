@@ -1,8 +1,9 @@
 import React, { Component } from 'react'
 import {
-    View, Text, Image, TextInput, Keyboard, KeyboardAvoidingView, Button, Alert,
+    View, Text, Image, TextInput, Keyboard, Alert,
     TouchableOpacity, TouchableHighlight, Dimensions, Modal, ScrollView,
-    ActivityIndicator, Linking
+    KeyboardAvoidingView,
+    ActivityIndicator, Linking, TouchableWithoutFeedback, Animated
 } from 'react-native'
 import styles from './ViewMessageCss'
 import obj from '../config'
@@ -18,6 +19,7 @@ const accessToken = require('../token.json')
 import FileViewer from 'react-native-file-viewer';
 const RNFS = require('react-native-fs');
 import * as Progress from 'react-native-progress';
+import { cos } from 'react-native-reanimated'
 
 // import * as ART from '@react-native-community/art'
 
@@ -29,6 +31,9 @@ import * as Progress from 'react-native-progress';
 const mqtt = require('mqtt')
 
 export default class Thread extends Component {
+    moveAnimation = new Animated.ValueXY({ x: Dimensions.get('window').width * 2, y: 100 })
+    notFoundAnimation = new Animated.ValueXY({ x: Dimensions.get('window').width / 2.5, y: Dimensions.get('window').height * 2 })
+
     daysLayout = []
     msgLayout = []
     messageRef = React.createRef();
@@ -72,10 +77,15 @@ export default class Thread extends Component {
                 },
                 width: 400,
                 height: Dimensions.get('window').height / 1.5,
-            },],
+            }],
             isImageViewVisible: false,
             firstMsgIndex: 0,
-            uploading: []
+            uploading: [],
+            showSearch: false,
+            searchText: '',
+            searchMsgs: [],
+            currentScrollPosition: 0,
+            showNotFound: false
         }
 
 
@@ -271,9 +281,9 @@ export default class Thread extends Component {
                 messages,
                 msg: '',
             })
-            // if (sendMsg) {
-            //     this.client.publish(obj.currentTabTopic, JSON.stringify(msgObj), false)
-            // }
+            if (sendMsg) {
+                this.client.publish(obj.currentTabTopic, JSON.stringify(msgObj), false)
+            }
         }
         else if (!obj.isThreadOpen) {
             this.increaseReplyCount(newMsg)
@@ -364,7 +374,7 @@ export default class Thread extends Component {
 
 
     goToThread = async (item) => {
-        const messages = await axios.get(`{${obj.BASE_URL}api/controlCenter/messenger/getReplyMessages/${item.id}`)
+        const messages = await axios.get(`${obj.BASE_URL}api/controlCenter/messenger/getReplyMessages/${item.id}`)
 
         this.props.navigation.navigate("Thread", {
             messages: messages.data.data, name: `Thread - ${messages.data.data.mainThread}`, topic: obj.currentTabTopic,
@@ -375,6 +385,7 @@ export default class Thread extends Component {
     }
 
     renderMessage = (item) => {
+
         let imgUri = "https://drive.google.com/thumbnail?id="
         if (item.isMedia) {
             // if (item.isMedia == 1) {
@@ -433,7 +444,22 @@ export default class Thread extends Component {
                             {
                                 !item.isMedia ?
                                     <Text>
-                                        {item.msg}
+                                        {
+                                            item.msg.split(" ").map((word, index) => (
+                                                <Text key={index}>
+                                                    {
+                                                        this.state.searchText &&
+                                                            word.toLowerCase().startsWith(this.state.searchText.toLocaleLowerCase()) ?
+                                                            <Text>
+                                                                <Text
+                                                                    style={styles.searchWord}
+                                                                >{word.substr(0, this.state.searchText.length)}</Text>
+                                                                <Text>{word.substr(this.state.searchText.length)} </Text>
+                                                            </Text>
+                                                            : <Text>{word}</Text>
+                                                    } </Text>
+                                            ))
+                                        }
                                     </Text> :
                                     (item.isMedia == 1 ?
                                         <TouchableOpacity onPress={() => { this.showImage(imgUri, item.fname) }} >
@@ -483,7 +509,7 @@ export default class Thread extends Component {
                                                     </View>
                                                 }
                                                 {
-                                                    
+
                                                     this.checkExisting(item.fname).then(res => {
                                                         item.exists = res
                                                     }),
@@ -556,28 +582,38 @@ export default class Thread extends Component {
         // this.props.navigation.navigate("GroupDetails", { groupDetails: this.groupDetails, topic: obj.currentTabTopic })
     }
 
-    scrollToUnread = () => {
-        let { unReadCount } = this.props.navigation.state.params
+    scrollToEnd = () => {
+        // console.log(this.msgLayout)
+        // let { unReadCount } = this.props.navigation.state.params
+        // this.msgLayout = []
         let { messages } = this.state
         let days = Object.keys(messages)
         let currIndex = 0;
         days.reverse().map((day, dayIndex) => {
             let length = messages[day].length
             for (let i = currIndex; i < currIndex + length; i++) {
-                this.msgLayout[i] += this.daysLayout[dayIndex]
+                this.msgLayout[i].pos += this.daysLayout[dayIndex]
             }
             currIndex += length
         })
-        if (!unReadCount) {
-            unReadCount = 1
-        }
-        let firstMsgIndex = this.msgLayout.length - unReadCount
-        if (this.state.scrollTo) {
-            this.ListView_Ref.scrollTo({ x: 0, y: this.msgLayout[firstMsgIndex], animated: true })
-        }
-        this.setState({
-            firstMsgIndex
-        })
+
+        // if (!unReadCount) {
+        //     unReadCount = 1
+        // }
+        // let firstMsgIndex = this.msgLayout.length - unReadCount
+        // if (this.state.scrollTo) {
+        //     this.ListView_Ref.scrollTo({ x: 0, y: this.msgLayout[firstMsgIndex], animated: true })
+        // }
+        // this.setState({
+        //     firstMsgIndex
+        // })
+        this.ListView_Ref.scrollToEnd({ animated: true })
+        // setTimeout(() => {
+        //     this.setState({
+        //         currentScrollPosition: this.msgLayout[this.msgLayout.length - 1].pos
+        //     })
+        // }, 2000)
+
     }
 
     handleChoosePhoto = async () => {
@@ -626,7 +662,7 @@ export default class Thread extends Component {
             status = res
         })
         return status
-        
+
     }
 
     downloadFile = async (url, fname, isImage, msgId) => {
@@ -642,14 +678,14 @@ export default class Thread extends Component {
             destination: `${RNBackgroundDownloader.directories.documents}/${fname}`,
 
         }).begin((expectedBytes) => {
-            console.log(`Going to download ${expectedBytes} bytes!`);
+            // console.log(`Going to download ${expectedBytes} bytes!`);
         }).progress((percent) => {
-            console.log(`Downloaded: ${percent * 100}%`);
+            // console.log(`Downloaded: ${percent * 100}%`);
         }).done((res) => {
             if (isImage && this.state.isImageViewVisible) {
                 alert("Downloaded")
             }
-            console.log('Download is done!');
+            // console.log('Download is done!');
             if (msgId) {
                 scope.setState({
                     uploading
@@ -662,8 +698,108 @@ export default class Thread extends Component {
 
     }
 
-    render() {
+    toggleSearch = () => {
+        if (this.state.showSearch) {
+            Animated.spring(this.moveAnimation, {
 
+                toValue: { x: Dimensions.get('window').width * 2, y: 0 },
+            }).start()
+            this.setState({
+                searchText: ''
+            })
+
+        }
+        else {
+            this.moveSearch()
+        }
+        this.setState({
+            showSearch: !this.state.showSearch
+        })
+
+    }
+
+    moveSearch = () => {
+
+        Animated.spring(this.moveAnimation, {
+            toValue: { x: 0, y: 0 },
+        }).start()
+    }
+
+    handleSearch = (text) => {
+
+        this.setState({
+            searchText: text
+        })
+        if (text && text != " ") {
+            let searchMsgs = []
+            this.msgLayout.map(item => {
+                let msgWords = item.msg.split(" ")
+                let matches = msgWords.filter(item => item.toLowerCase().startsWith(text.toLowerCase()))
+                if (matches.length) {
+                    searchMsgs.push(item)
+                }
+            })
+            this.setState({
+                searchMsgs
+            })
+        }
+    }
+
+    goToMsg = (type) => {
+        Keyboard.dismiss()
+        let { searchMsgs } = this.state
+        let nextPosition;
+        if (type == "down") {
+            nextPosition = searchMsgs.filter(item =>
+                item.pos > this.state.currentScrollPosition + 1
+            )
+            nextPosition = nextPosition.length ? nextPosition[0].pos : null
+
+        }
+
+        else {
+            nextPosition = searchMsgs.filter(item =>
+                item.pos < this.state.currentScrollPosition - 1
+            )
+            nextPosition = nextPosition.length ? nextPosition[nextPosition.length - 1].pos : null
+
+        }
+        if (nextPosition) {
+            this.ListView_Ref.scrollTo({
+                x: 0, y: nextPosition,
+                animated: true
+            })
+            this.setState({
+                currentScrollPosition: nextPosition
+            })
+        }
+        else if(this.state.searchText.length) {
+            this.setState({
+                showNotFound: true
+            })
+            Animated.spring(this.notFoundAnimation, {
+                toValue: { x: Dimensions.get('window').width / 2.5, y: Dimensions.get('window').height / 3 },
+            }).start()
+            setTimeout(() => {
+                // this.setState({
+                //     showNotFound: false
+                // })
+                Animated.spring(this.notFoundAnimation, {
+                    toValue: { x: Dimensions.get('window').width / 2.5, y: Dimensions.get('window').height * 2 },
+                }).start()
+            }, 3000)
+        }
+    }
+
+    handleScroll = (event) => {
+        let { currentScrollPosition } = this.state
+        currentScrollPosition = event.nativeEvent.contentOffset.y;
+        this.setState({
+            currentScrollPosition
+        })
+    }
+
+    render() {
         let count = 0;
         let { messages } = this.state
         let disbleButton = this.state.disbleButton
@@ -712,44 +848,101 @@ export default class Thread extends Component {
                         source={{ uri: "https://drive.google.com/thumbnail?id=1edfm6Kky6JuwCCaKjx5s5OjdkRHt-e4h" }}
                     />
                 </View> */}
+            {/* <KeyboardAvoidingView> */}
+
             <View
                 behavior={null} keyboardVerticalOffset={0}
                 style={[commonStyles.flexColumn, styles.viewMessageContainer]} >
+                {
+                    this.state.showNotFound &&
+                    <Animated.Text style={[styles.notFound, this.notFoundAnimation.getLayout()]}>
+                        Not Found
+                    </Animated.Text>
+                }
 
+                {
+                    !this.state.showSearch &&
+                    <View style={[commonStyles.flexRow, styles.headerTop, { backgroundColor: "darkgreen", padding: 10, alignItems: "center" }]}>
 
-                <View style={[commonStyles.flexRow, styles.headerTop, { backgroundColor: "darkgreen", padding: 10, alignItems: "center" }]}>
+                        <View style={{ display: "flex", flexDirection: "row", alignItems: "center" }}>
+                            <TouchableOpacity underlayColor="#F5F5F5" onPress={() => this.props.navigation.goBack()} >
+                                <Image style={{ marginRight: 10, width: 18, height: 18 }} source={require('../../assets/back.png')} />
+                            </TouchableOpacity>
+                            <Image style={[{ width: 40, height: 40, marginRight: 10, borderRadius: 50 }]}
+                                source={iconObj[userIcon]} />
+                            <TouchableHighlight
+                                style={{}}
+                                underlayColor="#d1d4d7"
+                                onPress={() => { this.goToGroupDetails() }}>
+                                <Text style={[styles.heading, { color: "white", fontSize: 20 }]}>
+                                    {
+                                        ((name).length > 20) ?
+                                            (((name).substring(0, 20 - 3)) + '...') :
+                                            name
+                                    }
+                                </Text>
+                            </TouchableHighlight>
 
-                    <View style={{ display: "flex", flexDirection: "row", alignItems: "center" }}>
-                        <TouchableOpacity underlayColor="#F5F5F5" onPress={() => this.props.navigation.goBack()} >
-                            <Image style={{ marginRight: 10, width: 18, height: 18 }} source={require('../../assets/back.png')} />
-                        </TouchableOpacity>
-                        <Image style={[{ width: 40, height: 40, marginRight: 10, borderRadius: 50 }]}
-                            source={iconObj[userIcon]} />
-                        <TouchableHighlight
-                            style={{}}
-                            underlayColor="#d1d4d7"
-                            onPress={() => { this.goToGroupDetails() }}>
-                            <Text style={[styles.heading, { color: "white", fontSize: 20 }]}>
-                                {
-                                    ((name).length > 20) ?
-                                        (((name).substring(0, 20 - 3)) + '...') :
-                                        name
-                                }
-                            </Text>
-                        </TouchableHighlight>
-
+                        </View>
+                        {
+                            !this.state.showSearch &&
+                            <TouchableWithoutFeedback>
+                                <View style={[commonStyles.flexRow, styles.headerTop, { backgroundColor: "darkgreen" }]}>
+                                    <View style={{ display: "flex", flexDirection: "row" }}>
+                                        <TouchableOpacity onPress={this.toggleSearch} >
+                                            <Image style={[commonStyles.icon, commonStyles.mRight10, { width: 30, height: 30 }]} source={require('../../assets/search.png')} />
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
+                            </TouchableWithoutFeedback>
+                        }
                     </View>
-                    <View style={{ display: "flex", flexDirection: "row" }}>
-                        <Image style={[commonStyles.icon, commonStyles.mRight10]} source={require('../../assets/search.png')} />
-                        <Image style={commonStyles.icon} source={require('../../assets/menu-vertical.png')} />
-                    </View>
-                </View>
+                }
+
+                {
+                    this.state.showSearch &&
+                    <Animated.View style={[styles.search, {
+                        justifyContent: "flex-start", alignItems: "center"
+                    }, this.moveAnimation.getLayout()]}>
+
+                        <View style={[commonStyles.flexRow, { justifyContent: "flex-start", width: "80%"}]}>
+                            {/* <View> */}
+                            <TouchableOpacity
+                                onPress={this.toggleSearch}
+                            >
+                                <Image style={{ width: 25, height: 25, marginRight: 10, marginLeft: 5, marginTop: 10 }} source={require('../../assets/back-white.png')} />
+                            </TouchableOpacity>
+
+                            <TextInput
+                                style={styles.searchInput}
+                                autoFocus={true}
+                                value={this.state.searchText}
+                                onChangeText={(text) => { this.handleSearch(text) }}
+                                placeholder="Search..."
+                                placeholderTextColor="white"
+                            />
+                            {/* </View> */}
+                        </View>
+
+                        <View style={[commonStyles.flexRow]}>
+                            <TouchableOpacity onPress={() => { if(this.state.searchText)this.goToMsg("up") }} >
+                                <Image style={{ width: 25, height: 25, marginRight: 10, marginLeft: 5 }}
+                                    source={require('../../assets/up-search.png')} />
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={() => { if(this.state.searchText)this.goToMsg("down") }} >
+                                <Image style={{ width: 25, height: 25, marginRight: 10, marginLeft: 5 }}
+                                    source={require('../../assets/down-search.png')} />
+                            </TouchableOpacity>
+                        </View>
+                    </Animated.View>
+                }
 
                 <View style={styles.messageContainer} >
-
-                    <ScrollView inverted ref={(ref) => {
-                        this.ListView_Ref = ref;
-                    }}
+                    <ScrollView
+                        onScroll={this.handleScroll}
+                        inverted ref={(ref) => {
+                            this.ListView_Ref = ref;
+                        }}
                         // inverted 
                         contentContainerStyle={styles.messages}
                     >
@@ -781,13 +974,22 @@ export default class Thread extends Component {
 
                                             <View key={index}
                                                 onLayout={event => {
+                                                    // if (!this.state.searchText) {
                                                     const layout = event.nativeEvent.layout;
-                                                    this.msgLayout.push(layout.y)
+                                                    if (!this.state.searchText && !this.state.showSearch) {
+                                                        this.msgLayout.push({ msg: item.msg, pos: layout.y })
+                                                    }
                                                     if (i == days.length - 1 && index == messages[date].length - 1) {
                                                         setTimeout(() => {
-                                                            this.scrollToUnread()
+                                                            this.scrollToEnd()
                                                         }, 1000)
                                                     }
+                                                    // }
+                                                    // else {
+                                                    //     setTimeout(() => {
+                                                    //         this.scrollToEnd()
+                                                    //     }, 1000)
+                                                    // }
                                                 }}
                                             >
                                                 {/* {
@@ -813,7 +1015,7 @@ export default class Thread extends Component {
 
                                                 <TouchableHighlight
                                                     underlayColor="lightblue"
-                                                    delayLongPress={2000}
+                                                    delayLongPress={1300}
                                                     onLongPress={() => {
                                                         this.threadAlert(item)
                                                     }}
@@ -877,6 +1079,7 @@ export default class Thread extends Component {
 
                 </View>
 
+
                 <View style={[commonStyles.flexRow, styles.inputContainer]}
 
                     bottom={this.state.keyboardOffset}>
@@ -928,6 +1131,7 @@ export default class Thread extends Component {
 
 
             </View>
+            {/* </KeyboardAvoidingView> */}
         </ >
         return (view)
 
