@@ -139,11 +139,18 @@ const sort = (a, b) => {
             return 1;
         }
     }
-    else if (a.lastMsgTime > b.lastMsgTime) {
-        return -1;
-    }
-    else {
-        return 1;
+    else { 
+        // console.log(a.lastMsgTime, b.lastMsgTime)
+        let aDate = a.lastMsgTime.split('/').reverse().join('/')
+        aDate = `20${aDate}`
+        let bDate = b.lastMsgTime.split('/').reverse().join('/')
+        bDate = `20${bDate}`
+        if(aDate > bDate) {
+            return -1;
+        }
+        else {
+            return 1;
+        }
     }
 
 }
